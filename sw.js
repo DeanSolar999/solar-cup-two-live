@@ -1,5 +1,5 @@
-const CACHE = 'solar-cup-two-live-v1';
-const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
+const CACHE = 'solar-cup-two-live-v2';
+const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon-512.png', './logo-sun.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)));
