@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090a0d">
+  <meta name="description" content="曜日盃 TWO 當日賽務查詢：賽程推進、十面場地、我的關注、晉級戰況與球團力場排行。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="曜日盃 TWO">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <title>SOLAR CUP TWO｜行動戰情終端</title>
+  <style>
+    :root {
+      --bg: #090a0d;
+      --panel: #12151a;
+      --panel-2: #181c22;
+      --panel-3: #20252c;
+      --red: #d31e2b;
+      --red-deep: #650d16;
+      --yellow: #ffd21a;
+      --cream: #f5f2e8;
+      --muted: #9da3ae;
+      --line: rgba(255,255,255,.10);
+      --green: #58d68d;
+      --phone: 430px;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: #050609; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--cream);
+      background:
+        radial-gradient(circle at 15% 12%, rgba(211,30,43,.16), transparent 32%),
+        radial-gradient(circle at 85% 80%, rgba(255,210,26,.05), transparent 28%),
+        #050609;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC",
+        "Microsoft JhengHei", Arial, sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .stage {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    .device {
+      position: relative;
+      width: min(100%, var(--phone));
+      height: min(900px, calc(100vh - 44px));
+      min-height: 680px;
+      overflow: hidden;
+      background: var(--bg);
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 28px;
+      box-shadow: 0 30px 100px rgba(0,0,0,.66), 0 0 0 1px rgba(211,30,43,.12);
+    }
+
+    .device::before {
+      content: "";
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      opacity: .08;
+      background-image:
+        linear-gradient(rgba(255,255,255,.25) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.25) 1px, transparent 1px);
+      background-size: 30px 30px;
+      mask-image: linear-gradient(to bottom, black, transparent 26%);
+    }
+
+    .topbar {
+      position: absolute;
+      z-index: 15;
+      inset: 0 0 auto 0;
+      height: 86px;
+      padding: 15px 16px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(180deg, rgba(9,10,13,.98), rgba(9,10,13,.91));
+      border-bottom: 1px solid rgba(211,30,43,.3);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .brand-mark {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 38px;
+      background: var(--yellow);
+      clip-path: polygon(0 0, 76% 0, 100% 24%, 100% 100%, 22% 100%, 0 78%);
+      color: #090a0d;
+      display: grid;
+      place-items: center;
+      font-weight: 1000;
+      font-size: 17px;
+      letter-spacing: -2px;
+      box-shadow: 0 0 22px rgba(255,210,26,.22);
+    }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 2px solid #090a0d;
+      clip-path: inherit;
+    }
+    .brand-copy { min-width: 0; }
+    .brand-copy strong {
+      display: block;
+      font-size: 14px;
+      letter-spacing: .13em;
+      white-space: nowrap;
+    }
+    .brand-copy span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .17em;
+    }
+
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .sync {
+      padding: 6px 8px;
+      border: 1px solid rgba(88,214,141,.28);
+      color: #8ee8b2;
+      font-size: 9px;
+      letter-spacing: .1em;
+      clip-path: polygon(0 0, 88% 0, 100% 35%, 100% 100%, 0 100%);
+      background: rgba(88,214,141,.06);
+    }
+    .icon-btn {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--panel);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+    .icon-btn .dot {
+      position: absolute;
+      right: 1px;
+      top: 1px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: 0 0 10px var(--yellow);
+    }
+
+    .viewport {
+      position: absolute;
+      inset: 86px 0 72px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+    .viewport::-webkit-scrollbar { display: none; }
+
+    .view { display: none; min-height: 100%; padding: 14px 14px 28px; }
+    .view.active { display: block; animation: reveal .22s ease-out; }
+    @keyframes reveal { from { opacity: .2; transform: translateY(5px); } }
+
+    .eyebrow {
+      color: var(--yellow);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .page-heading {
+      margin: 4px 0 13px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .page-heading h1 {
+      margin: 0;
+      font-size: 25px;
+      letter-spacing: -.03em;
+    }
+    .page-heading small { color: var(--muted); font-size: 11px; }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 12px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, rgba(27,31,38,.97), rgba(16,19,24,.98));
+      clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%);
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 52px;
+      height: 2px;
+      background: var(--red);
+    }
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 11px;
+    }
+    .card-title strong { font-size: 14px; letter-spacing: .03em; }
+    .card-title span { color: var(--muted); font-size: 10px; }
+
+    .alert-hero {
+      min-height: 174px;
+      border-color: rgba(255,210,26,.45);
+      background:
+        linear-gradient(105deg, rgba(101,13,22,.94), rgba(18,21,26,.97) 66%),
+        var(--panel);
+    }
+    .alert-hero::before {
+      content: "";
+      position: absolute;
+      right: -38px;
+      top: -32px;
+      width: 170px;
+      height: 170px;
+      transform: rotate(-12deg);
+      opacity: .5;
+      background:
+        linear-gradient(145deg, transparent 27%, #bb1724 28% 43%, transparent 44%),
+        linear-gradient(30deg, transparent 48%, #5e0810 49% 62%, transparent 63%);
+      border: 1px solid rgba(255,210,26,.2);
+      clip-path: polygon(0 22%, 50% 0, 100% 14%, 83% 68%, 42% 100%, 8% 69%);
+    }
+    .alert-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 9px;
+      color: #111;
+      background: var(--yellow);
+      font-size: 10px;
+      font-weight: 1000;
+      letter-spacing: .08em;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%);
+    }
+    .pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: pulse 1.4s infinite;
+    }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 7px rgba(211,30,43,0); } }
+
+    .next-line { position: relative; z-index: 1; margin: 12px 0 7px; }
+    .next-line h2 { margin: 0; font-size: 25px; }
+    .match-meta {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: end;
+      gap: 14px;
+    }
+    .court-number {
+      color: var(--yellow);
+      font-size: 45px;
+      line-height: .9;
+      font-weight: 1000;
+      letter-spacing: -.06em;
+    }
+    .court-number small {
+      display: block;
+      margin-top: 8px;
+      color: var(--cream);
+      font-size: 9px;
+      letter-spacing: .15em;
+    }
+    .versus { padding-bottom: 1px; font-size: 14px; font-weight: 900; }
+    .versus span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; font-weight: 500; }
+
+    .progress-strip {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin: 2px 0 13px;
+    }
+    .phase { text-align: center; min-width: 0; }
+    .phase i {
+      position: relative;
+      display: block;
+      height: 6px;
+      margin-bottom: 6px;
+      background: #2a2f37;
+      transform: skewX(-18deg);
+    }
+    .phase.done i { background: #6c737e; }
+    .phase.live i { background: var(--yellow); box-shadow: 0 0 12px rgba(255,210,26,.5); }
+    .phase span { display: block; color: var(--muted); font-style: normal; font-size: 8px; white-space: nowrap; }
+    .phase.live span { color: var(--yellow); font-weight: 900; }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat {
+      padding: 11px;
+      background: rgba(255,255,255,.035);
+      border-left: 2px solid var(--red);
+    }
+    .stat b { display: block; font-size: 20px; }
+    .stat span { color: var(--muted); font-size: 10px; }
+
+    .ranking-preview { display: grid; gap: 8px; }
+    .rank-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 43px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,.035);
+      border: 1px solid transparent;
+    }
+    .rank-row:first-child { border-color: rgba(255,210,26,.3); }
+    .rank-no { color: var(--yellow); font-size: 18px; font-weight: 1000; }
+    .rank-club strong { display: block; font-size: 13px; }
+    .rank-club small { color: var(--muted); font-size: 9px; }
+    .rank-points { text-align: right; font-weight: 1000; }
+    .rank-points small { display: block; color: #8ee8b2; font-size: 9px; }
+
+    .team-card { padding-left: 19px; }
+    .team-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: #4b515c;
+    }
+    .team-card.soon::before { background: var(--yellow); box-shadow: 0 0 14px var(--yellow); }
+    .team-card.wait::before { background: var(--red); }
+    .team-head { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+    .team-head h3 { margin: 0; font-size: 19px; }
+    .team-head p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .status-chip {
+      padding: 5px 8px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+    .status-chip.soon { color: #111; border-color: var(--yellow); background: var(--yellow); font-weight: 1000; }
+    .team-next {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      margin-top: 13px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+    .team-next time { color: var(--yellow); font-size: 22px; font-weight: 1000; }
+    .team-next span { font-size: 12px; }
+    .team-next b { font-size: 13px; }
+
+    .primary-btn, .ghost-btn {
+      min-height: 46px;
+      border: 0;
+      cursor: pointer;
+      font-weight: 900;
+      letter-spacing: .04em;
+    }
+    .primary-btn {
+      width: 100%;
+      color: #111;
+      background: var(--yellow);
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+    }
+    .ghost-btn {
+      padding: 0 14px;
+      color: var(--cream);
+      background: transparent;
+      border: 1px solid var(--line);
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 7px;
+      margin: 0 -14px 12px;
+      padding: 0 14px 3px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .filter-row::-webkit-scrollbar { display: none; }
+    .chip {
+      flex: 0 0 auto;
+      min-height: 37px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .chip.active { color: #111; border-color: var(--yellow); background: var(--yellow); font-weight: 900; }
+
+    .live-card { padding: 0; }
+    .live-card .live-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .live-card .live-top b { color: var(--yellow); font-size: 12px; }
+    .score-line {
+      display: grid;
+      grid-template-columns: 1fr 42px;
+      align-items: center;
+      min-height: 45px;
+      padding: 0 12px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .score-line strong { text-align: center; font-size: 21px; }
+    .score-line.winner strong { color: var(--yellow); }
+    .live-foot {
+      display: flex;
+      justify-content: space-between;
+      padding: 9px 12px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .live-dot { color: #ff5261; font-weight: 900; }
+
+    .tier-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tier {
+      position: relative;
+      min-height: 108px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .tier::after {
+      content: "";
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      right: -27px;
+      bottom: -24px;
+      transform: rotate(45deg);
+      border: 10px solid currentColor;
+      opacity: .09;
+    }
+    .tier small { color: var(--muted); font-size: 9px; }
+    .tier h3 { margin: 5px 0 10px; font-size: 20px; }
+    .tier b { font-size: 12px; }
+    .platinum { color: #d9ecff; }
+    .gold { color: var(--yellow); }
+    .silver { color: #c7cbd2; }
+    .bronze { color: #d88a52; }
+
+    .bracket-mini { display: grid; gap: 8px; }
+    .bracket-line {
+      display: grid;
+      grid-template-columns: 35px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      padding: 9px;
+      background: rgba(255,255,255,.035);
+    }
+    .bracket-line i { color: var(--muted); font-style: normal; font-size: 10px; }
+    .bracket-line span { font-size: 12px; }
+    .bracket-line b { color: var(--yellow); font-size: 10px; }
+
+    .podium {
+      display: grid;
+      grid-template-columns: 1fr 1.12fr 1fr;
+      align-items: end;
+      gap: 7px;
+      margin: 6px 0 14px;
+    }
+    .podium-card {
+      min-height: 122px;
+      padding: 10px 7px;
+      text-align: center;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    }
+    .podium-card.first {
+      min-height: 148px;
+      border-color: rgba(255,210,26,.42);
+      background: linear-gradient(180deg, rgba(255,210,26,.1), rgba(255,255,255,.02));
+    }
+    .mascot {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 8px;
+      display: grid;
+      place-items: center;
+      color: #111;
+      background: var(--yellow);
+      font-size: 21px;
+      font-weight: 1000;
+      clip-path: polygon(50% 0, 88% 20%, 100% 62%, 72% 100%, 27% 100%, 0 62%, 12% 20%);
+    }
+    .podium-card strong { display: block; font-size: 12px; }
+    .podium-card b { display: block; margin-top: 6px; color: var(--yellow); font-size: 16px; }
+    .podium-card small { color: var(--muted); font-size: 9px; }
+
+    .bottom-nav {
+      position: absolute;
+      z-index: 15;
+      inset: auto 0 0;
+      height: 72px;
+      padding: 7px 8px max(7px, env(safe-area-inset-bottom));
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      background: rgba(9,10,13,.98);
+      border-top: 1px solid rgba(211,30,43,.26);
+    }
+    .nav-btn {
+      position: relative;
+      border: 0;
+      background: transparent;
+      color: #737984;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 3px;
+      font-size: 9px;
+    }
+    .nav-btn svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .nav-btn.active { color: var(--yellow); }
+    .nav-btn.active::before {
+      content: "";
+      position: absolute;
+      top: -7px;
+      width: 29px;
+      height: 3px;
+      background: var(--yellow);
+      box-shadow: 0 0 11px var(--yellow);
+    }
+
+    .toast {
+      position: absolute;
+      z-index: 40;
+      left: 12px;
+      right: 12px;
+      top: 96px;
+      padding: 13px 14px;
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      color: #111;
+      background: var(--yellow);
+      box-shadow: 0 15px 38px rgba(0,0,0,.52), 0 0 24px rgba(255,210,26,.18);
+      clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+      transform: translateY(-150%);
+      opacity: 0;
+      transition: .32s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-icon {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #111;
+      color: var(--yellow);
+      font-weight: 1000;
+    }
+    .toast strong { display: block; font-size: 12px; }
+    .toast span { display: block; margin-top: 2px; font-size: 10px; }
+    .toast button { border: 0; background: transparent; color: #111; cursor: pointer; font-size: 18px; }
+
+    .modal {
+      position: absolute;
+      z-index: 50;
+      inset: 0;
+      display: none;
+      align-items: end;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(5px);
+    }
+    .modal.show { display: flex; }
+    .sheet {
+      width: 100%;
+      padding: 18px 15px calc(18px + env(safe-area-inset-bottom));
+      background: #11141a;
+      border-top: 1px solid rgba(255,210,26,.3);
+      animation: sheet .24s ease-out;
+    }
+    @keyframes sheet { from { transform: translateY(60px); opacity: .3; } }
+    .sheet h2 { margin: 0 0 4px; font-size: 21px; }
+    .sheet p { margin: 0 0 13px; color: var(--muted); font-size: 11px; }
+    .search {
+      width: 100%;
+      min-height: 46px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      outline: none;
+      background: #0b0d11;
+      color: var(--cream);
+    }
+    .choices { display: grid; gap: 7px; margin: 11px 0 13px; }
+    .choice {
+      min-height: 47px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      cursor: pointer;
+    }
+    .choice.selected { border-color: var(--yellow); color: var(--yellow); }
+    .choice small { color: var(--muted); }
+    .empty-state {
+      padding: 28px 15px;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--line);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .connection-note {
+      margin: -5px 0 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.5;
+    }
+    .connection-note b { color: #8ee8b2; }
+    .team-remove {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 6px;
+    }
+    .wide-test { width: 100%; margin-top: 10px; }
+    .mascot.violet { background: #a855f7; }
+    .mascot.orange { background: #ff8a3c; }
+
+    .note {
+      margin-top: 12px;
+      padding: 10px 11px;
+      color: var(--muted);
+      background: rgba(255,255,255,.025);
+      border-left: 2px solid var(--red);
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 520px) {
+      .stage { display: block; padding: 0; }
+      .device {
+        width: 100%;
+        height: 100vh;
+        min-height: 640px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <section class="device" aria-label="SOLAR CUP TWO 行動戰情終端">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">SC2</div>
+          <div class="brand-copy">
+            <strong>SOLAR CUP TWO</strong>
+            <span>行動戰情終端</span>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div class="sync" id="syncStatus">● CONNECTING</div>
+          <button class="icon-btn" type="button" aria-label="開啟賽程提醒" data-notify>
+            <span aria-hidden="true">⌁</span><i class="dot"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="toast" id="toast" role="status" aria-live="polite">
+        <div class="toast-icon">!</div>
+        <div>
+          <strong id="toastTitle">即將輪到｜TF-ING</strong>
+          <span id="toastBody">第6場地前方剩餘2場・請留意戰情</span>
+        </div>
+        <button type="button" aria-label="關閉提醒" data-close-toast>×</button>
+      </div>
+
+      <div class="viewport">
+        <section class="view active" data-view="status">
+          <div class="eyebrow" id="operationTime">OPERATION STATUS · --:--</div>
+          <div class="page-heading">
+            <h1>全場戰情</h1>
+            <small id="updatedAt">資料同步中</small>
+          </div>
+
+          <article class="card alert-hero">
+            <span class="alert-label"><i class="pulse"></i> 我的關注・即將輪到</span>
+            <div class="next-line"><h2 id="heroTeam">設定我的關注</h2></div>
+            <div class="match-meta">
+              <div class="court-number" id="heroCourt">--<small>COURT／場地</small></div>
+              <div class="versus" id="heroVersus">選擇 1～3 隊<span>賽程接近時主動提醒</span></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-title">
+              <strong>賽程推進</strong>
+              <span id="progressCount">0／310 場完成</span>
+            </div>
+            <div class="progress-strip">
+              <div class="phase done"><i></i><span>競資</span></div>
+              <div class="phase done"><i></i><span>休資</span></div>
+              <div class="phase done"><i></i><span>開幕</span></div>
+              <div class="phase live"><i></i><span>初賽</span></div>
+              <div class="phase"><i></i><span>複賽</span></div>
+              <div class="phase"><i></i><span>決勝</span></div>
+              <div class="phase"><i></i><span>頒獎</span></div>
+            </div>
+            <div class="stats-grid">
+              <div class="stat"><b id="currentStage">待開賽</b><span>目前賽事階段</span></div>
+              <div class="stat"><b id="delayValue">即時同步</b><span>賽程狀態</span></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-title">
+              <strong>力場排行・球團總積分</strong>
+              <span>查看全部 ›</span>
+            </div>
+            <div class="ranking-preview">
+              <div class="rank-row">
+                <div class="rank-no">1</div>
+                <div class="rank-club"><strong>小羽宙</strong><small>晶鎧雷虎神・LV.18</small></div>
+                <div class="rank-points">1,860<small>＋100 AT</small></div>
+              </div>
+              <div class="rank-row">
+                <div class="rank-no">2</div>
+                <div class="rank-club"><strong>羽光</strong><small>聖輝獨角神駒・LV.18</small></div>
+                <div class="rank-points">1,800<small>差 60 AT</small></div>
+              </div>
+              <div class="rank-row">
+                <div class="rank-no">3</div>
+                <div class="rank-club"><strong>歡樂</strong><small>天風獅鷲神・LV.16</small></div>
+                <div class="rank-points">1,660<small>差 140 AT</small></div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" data-view="mine">
+          <div class="eyebrow" id="followCount">FOLLOWING TEAMS · 0/3</div>
+          <div class="page-heading">
+            <h1>我的關注</h1>
+            <small>最多關注3隊</small>
+          </div>
+
+          <div id="favoriteCards">
+          <article class="card team-card soon">
+            <div class="team-head">
+              <div><h3>TF-ING</h3><p>曜日二・競技組</p></div>
+              <span class="status-chip soon">前方剩2場</span>
+            </div>
+            <div class="team-next">
+              <time>14:05</time><span>VS 大叔隊</span><b>場6</b>
+            </div>
+          </article>
+
+          <article class="card team-card wait">
+            <div class="team-head">
+              <div><h3>羽球次等生</h3><p>曜請組・全循環</p></div>
+              <span class="status-chip">等待中</span>
+            </div>
+            <div class="team-next">
+              <time>15:05</time><span>VS 番茄嚇嚇叫</span><b>場9</b>
+            </div>
+          </article>
+          </div>
+
+          <button class="primary-btn" type="button" data-open-modal>＋ 新增／調整關注隊伍</button>
+          <div class="note">
+            提醒依照真實賽程推進觸發，而非只依表定時間。前方剩2場時預告，前一場進行中時通知至場邊準備。
+          </div>
+          <button class="ghost-btn wide-test" type="button" data-test-toast>
+            模擬「即將上場」提醒
+          </button>
+        </section>
+
+        <section class="view" data-view="live">
+          <div class="eyebrow">COURTS LIVE · 10 COURTS</div>
+          <div class="page-heading">
+            <h1>LIVE 賽況</h1>
+            <small id="liveCount">目前 0 場進行中</small>
+          </div>
+          <div class="filter-row">
+            <button class="chip active" type="button">現在進行</button>
+            <button class="chip" type="button">準備上場</button>
+            <button class="chip" type="button">我的關注</button>
+            <button class="chip" type="button">場地1–10</button>
+          </div>
+
+          <div id="liveCards">
+          <article class="card live-card">
+            <div class="live-top"><b>● 場地 01</b><span>競白初－A・13:50</span></div>
+            <div class="score-line winner"><span>琳達雙余座</span><strong>18</strong></div>
+            <div class="score-line"><span>我們想一下</span><strong>14</strong></div>
+            <div class="live-foot"><span class="live-dot">LIVE・進行中</span><span>下一場 14:05</span></div>
+          </article>
+
+          <article class="card live-card">
+            <div class="live-top"><b>● 場地 06</b><span>競白初－C・13:50</span></div>
+            <div class="score-line winner"><span>有點胖的R</span><strong>21</strong></div>
+            <div class="score-line"><span>Skip</span><strong>17</strong></div>
+            <div class="live-foot"><span class="live-dot">即將完賽</span><span>下場：TF-ING</span></div>
+          </article>
+
+          <article class="card live-card">
+            <div class="live-top"><b>● 場地 09</b><span>曜請 11・13:50</span></div>
+            <div class="score-line"><span>慈母手聰線</span><strong>11</strong></div>
+            <div class="score-line winner"><span>番茄嚇嚇叫</span><strong>16</strong></div>
+            <div class="live-foot"><span class="live-dot">LIVE・進行中</span><span>第 4 輪</span></div>
+          </article>
+          </div>
+        </section>
+
+        <section class="view" data-view="advance">
+          <div class="eyebrow">QUALIFYING · BRACKET</div>
+          <div class="page-heading">
+            <h1>晉級戰況</h1>
+            <small>分流結果即時更新</small>
+          </div>
+
+          <article class="card">
+            <div class="card-title"><strong>四階級分流</strong><span>已確認 68／100 隊</span></div>
+            <div class="tier-grid">
+              <div class="tier platinum"><small>PLATINUM</small><h3>白金</h3><b>14／20 隊</b></div>
+              <div class="tier gold"><small>GOLD</small><h3>黃金</h3><b>14／20 隊</b></div>
+              <div class="tier silver"><small>SILVER</small><h3>白銀</h3><b>20／30 隊</b></div>
+              <div class="tier bronze"><small>BRONZE</small><h3>青銅</h3><b>20／30 隊</b></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-title"><strong>我的關注・晉級狀態</strong><span>自動追蹤</span></div>
+            <div class="bracket-mini">
+              <div class="bracket-line"><i>01</i><span>TF-ING</span><b>白金・暫定</b></div>
+              <div class="bracket-line"><i>02</i><span>羽球次等生</span><b>曜請第5名</b></div>
+              <div class="bracket-line"><i>03</i><span>尚未選擇</span><b>＋加入</b></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-title"><strong>階段路徑</strong><span>目前：階級初賽</span></div>
+            <div class="progress-strip">
+              <div class="phase done"><i></i><span>資格賽</span></div>
+              <div class="phase live"><i></i><span>初賽</span></div>
+              <div class="phase"><i></i><span>複賽</span></div>
+              <div class="phase"><i></i><span>8強</span></div>
+              <div class="phase"><i></i><span>4強</span></div>
+              <div class="phase"><i></i><span>決賽</span></div>
+              <div class="phase"><i></i><span>封王</span></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" data-view="field">
+          <div class="eyebrow">AT FIELD RANKING · LIVE</div>
+          <div class="page-heading">
+            <h1>力場排行</h1>
+            <small>球團總積分</small>
+          </div>
+
+          <div class="podium">
+            <div class="podium-card">
+              <div class="mascot violet">羽</div>
+              <strong>羽光</strong><b>1,800</b><small>第2名</small>
+            </div>
+            <div class="podium-card first">
+              <div class="mascot">宙</div>
+              <strong>小羽宙</strong><b>1,860</b><small>LEADER・第1名</small>
+            </div>
+            <div class="podium-card">
+              <div class="mascot orange">歡</div>
+              <strong>歡樂</strong><b>1,660</b><small>第3名</small>
+            </div>
+          </div>
+
+          <article class="card">
+            <div class="card-title"><strong>完整排名</strong><span>最近變動：小羽宙＋100</span></div>
+            <div class="ranking-preview">
+              <div class="rank-row"><div class="rank-no">1</div><div class="rank-club"><strong>小羽宙</strong><small>領先60 AT</small></div><div class="rank-points">1,860<small>↑ 1</small></div></div>
+              <div class="rank-row"><div class="rank-no">2</div><div class="rank-club"><strong>羽光</strong><small>差距60 AT</small></div><div class="rank-points">1,800<small>—</small></div></div>
+              <div class="rank-row"><div class="rank-no">3</div><div class="rank-club"><strong>歡樂</strong><small>差距140 AT</small></div><div class="rank-points">1,660<small>↑ 2</small></div></div>
+              <div class="rank-row"><div class="rank-no">4</div><div class="rank-club"><strong>曜日二</strong><small>差距20 AT</small></div><div class="rank-points">1,640<small>↓ 1</small></div></div>
+              <div class="rank-row"><div class="rank-no">5</div><div class="rank-club"><strong>大船</strong><small>差距20 AT</small></div><div class="rank-points">1,620<small>—</small></div></div>
+            </div>
+          </article>
+        </section>
+      </div>
+
+      <nav class="bottom-nav" aria-label="主要導覽">
+        <button class="nav-btn active" type="button" data-target="status">
+          <svg viewBox="0 0 24 24"><path d="M4 19V9m5 10V5m6 14v-7m5 7V3"/></svg><span>戰情</span>
+        </button>
+        <button class="nav-btn" type="button" data-target="mine">
+          <svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><span>我的</span>
+        </button>
+        <button class="nav-btn" type="button" data-target="live">
+          <svg viewBox="0 0 24 24"><path d="M4 16a8 8 0 0 1 0-8m16 8a8 8 0 0 0 0-8M8 13a4 4 0 0 1 0-2m8 2a4 4 0 0 0 0-2"/><circle cx="12" cy="12" r="1.5"/></svg><span>LIVE</span>
+        </button>
+        <button class="nav-btn" type="button" data-target="advance">
+          <svg viewBox="0 0 24 24"><path d="M5 4h5v5H5zm9 0h5v5h-5zM5 15h5v5H5zm9 0h5v5h-5zM10 6.5h4M7.5 9v6m9-6v6m-6.5 2.5h4"/></svg><span>晉級</span>
+        </button>
+        <button class="nav-btn" type="button" data-target="field">
+          <svg viewBox="0 0 24 24"><path d="m12 3 2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7Z"/></svg><span>力場</span>
+        </button>
+      </nav>
+
+      <div class="modal" id="modal" aria-hidden="true" inert>
+        <div class="sheet">
+          <h2>設定我的關注</h2>
+          <p>選擇1～3隊，賽程接近時主動提醒。</p>
+          <input class="search" id="teamSearch" type="search" placeholder="搜尋隊伍名稱或球團">
+          <div class="choices" id="teamChoices">
+            <button class="choice selected" type="button"><span>TF-ING</span><small>曜日二　✓</small></button>
+            <button class="choice selected" type="button"><span>羽球次等生</span><small>曜請組　✓</small></button>
+            <button class="choice" type="button"><span>琳達雙余座</span><small>小羽宙　＋</small></button>
+            <button class="choice" type="button"><span>大叔隊</span><small>自由組　＋</small></button>
+          </div>
+          <button class="primary-btn" id="saveFavorites" type="button" data-close-modal>完成設定・2／3</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://deansolar999.github.io/solarcup-info/tournament-data.js"></script>
+  <script src="https://deansolar999.github.io/solarcup-info/schedule-data.js"></script>
+  <script>
+    (() => {
+      'use strict';
+
+      const SHEET_ID = '1KqX0AJKHU8TR-t0hUZLqB6jib0tL7BbR';
+      const SHEET_TAB = '8_發布_戰情看板';
+      const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_TAB)}`;
+      const FAVORITES_KEY = 'solar-cup-two-live:favorites:v1';
+      const ALERTS_KEY = 'solar-cup-two-live:alerts:v1';
+      const EVENT_DATE = '2026-08-15';
+      const SC = window.SolarCupSchedule;
+      const SD = window.SolarCupData;
+      const matches = SC?.matches || [];
+      const results = {};
+      let sheetConnected = false;
+      let liveFilter = '現在進行';
+      let toastTimer;
+      let tempFavorites = [];
+      let teams = [];
+
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const esc = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      })[char]);
+      const nowClock = () => new Date().toLocaleTimeString('zh-TW', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+      });
+      const timeMinutes = (time) => {
+        const [h, m] = String(time || '00:00').split(':').map(Number);
+        return h * 60 + m;
+      };
+      const todayKey = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
+      const teamName = (team) => team?.label || team?.name || '';
+      const teamClub = (team) => team?.clubFull || team?.clubObj?.full || team?.club?.full ||
+        team?.clubObj?.name || team?.club?.name || team?.club || team?.track || '賽事隊伍';
+
+      function prepareTeams() {
+        if (!SD?.buildAllTeams) return;
+        const built = SD.buildAllTeams();
+        teams = (built?.teams || []).filter((team) => teamName(team));
+
+        const grouped = {};
+        const invite = [];
+        teams.forEach((team) => {
+          if (team.track === '曜請') invite.push(team);
+          else if (team.group) (grouped[team.group] ||= []).push(team);
+        });
+
+        const rr = [[0,1], [2,3], [0,2], [1,3], [0,3], [1,2]];
+        const yao = {
+          157:[0,1],179:[0,2],275:[0,3],247:[0,4],307:[0,5],295:[0,6],209:[0,7],
+          276:[1,2],180:[1,3],297:[1,4],248:[1,5],210:[1,6],309:[1,7],
+          158:[2,3],308:[2,4],229:[2,5],257:[2,6],298:[2,7],230:[3,4],
+          296:[3,5],310:[3,6],258:[3,7],159:[4,5],189:[4,6],286:[4,7],
+          285:[5,6],190:[5,7],160:[6,7]
+        };
+        const counters = {};
+        matches.forEach((match) => {
+          if (match.stage === '資格賽') {
+            const slot = counters[match.code] || 0;
+            counters[match.code] = slot + 1;
+            const group = grouped[match.code];
+            if (group?.length >= 4) {
+              const pair = rr[slot % 6];
+              match._t = [group[pair[0]], group[pair[1]]];
+            }
+          } else if (match.grp === '曜請組' && yao[match.n] && invite.length >= 8) {
+            match._t = yao[match.n].map((index) => invite[index]);
+          }
+        });
+      }
+
+      function parseCSV(text) {
+        const rows = [];
+        let row = [], value = '', quoted = false;
+        for (let i = 0; i < text.length; i += 1) {
+          const char = text[i];
+          if (quoted) {
+            if (char === '"') {
+              if (text[i + 1] === '"') { value += '"'; i += 1; }
+              else quoted = false;
+            } else value += char;
+          } else if (char === '"') quoted = true;
+          else if (char === ',') { row.push(value); value = ''; }
+          else if (char === '\n' || char === '\r') {
+            if (char === '\r' && text[i + 1] === '\n') i += 1;
+            row.push(value); value = '';
+            if (row.length > 1 || row[0]) rows.push(row);
+            row = [];
+          } else value += char;
+        }
+        if (value || row.length) { row.push(value); rows.push(row); }
+        return rows;
+      }
+
+      function hydrateSheet(csv) {
+        const rows = parseCSV(csv);
+        if (!rows.length) return;
+        const header = rows.shift().map((cell) => cell.trim());
+        const column = (name) => header.indexOf(name);
+        const cN = column('場次編號');
+        const cA = column('隊A');
+        const cB = column('隊B');
+        const cSA = column('分A');
+        const cSB = column('分B');
+        if (cN < 0) return;
+
+        Object.keys(results).forEach((key) => delete results[key]);
+        rows.forEach((cells) => {
+          const number = Number.parseInt(cells[cN], 10);
+          const match = matches.find((item) => item.n === number);
+          if (!match) return;
+          const aName = String(cells[cA] || '').trim();
+          const bName = String(cells[cB] || '').trim();
+          if (aName && bName) {
+            match._t = [
+              teams.find((team) => teamName(team) === aName) || { label: aName },
+              teams.find((team) => teamName(team) === bName) || { label: bName }
+            ];
+          }
+          const scoreA = Number.parseInt(cells[cSA], 10);
+          const scoreB = Number.parseInt(cells[cSB], 10);
+          if (Number.isFinite(scoreA) && Number.isFinite(scoreB)) {
+            results[number] = { sa: scoreA, sb: scoreB, done: true };
+          }
+        });
+        sheetConnected = true;
+      }
+
+      async function pollSheet() {
+        try {
+          const response = await fetch(`${SHEET_URL}&_=${Date.now()}`, { cache: 'no-store' });
+          if (!response.ok) throw new Error('sheet');
+          hydrateSheet(await response.text());
+          $('#syncStatus').textContent = '● ONLINE';
+          $('#updatedAt').textContent = `更新於 ${nowClock()}`;
+          renderAll();
+          checkFavoriteAlerts();
+        } catch {
+          $('#syncStatus').textContent = '● RETRYING';
+          $('#updatedAt').textContent = '暫用最後資料';
+        }
+      }
+
+      function getFavorites() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) || 'null');
+          if (Array.isArray(saved)) return saved.slice(0, 3);
+        } catch {}
+        const defaults = ['TF-ING', '羽球次等生'].filter((name) =>
+          teams.some((team) => teamName(team) === name));
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify(defaults));
+        return defaults;
+      }
+
+      function saveFavorites(names) {
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify(names.slice(0, 3)));
+      }
+
+      function courtQueue(court) {
+        return matches.filter((match) => match.ct === court).sort((a, b) =>
+          timeMinutes(a.s) - timeMinutes(b.s) || a.n - b.n);
+      }
+
+      function currentCourtMatch(court) {
+        return courtQueue(court).find((match) => !results[match.n]?.done) || null;
+      }
+
+      function nextForTeam(name) {
+        const candidates = matches.filter((match) =>
+          !results[match.n]?.done && match._t?.some((team) => teamName(team) === name));
+        candidates.sort((a, b) => timeMinutes(a.s) - timeMinutes(b.s) || a.n - b.n);
+        const match = candidates[0];
+        if (!match) return null;
+        const queue = courtQueue(match.ct).filter((item) => !results[item.n]?.done);
+        const ahead = Math.max(0, queue.findIndex((item) => item.n === match.n));
+        return { match, ahead };
+      }
+
+      function otherTeam(match, name) {
+        return teamName(match?._t?.find((team) => teamName(team) !== name)) || '待分流確認';
+      }
+
+      function stageLabel(done) {
+        if (done >= 298) return '決勝賽';
+        if (done >= 270) return '準決賽';
+        if (done >= 250) return '八強賽';
+        if (done >= 190) return '階級複賽';
+        if (done >= 150) return '階級初賽';
+        if (done >= 60) return '休閒資格賽';
+        if (done > 0) return '競技資格賽';
+        return todayKey() === EVENT_DATE ? '準備開賽' : '賽程已排定';
+      }
+
+      function renderStatus() {
+        const done = Object.keys(results).length;
+        const favorites = getFavorites();
+        const states = favorites.map((name) => ({ name, state: nextForTeam(name) }))
+          .filter((item) => item.state)
+          .sort((a, b) => a.state.ahead - b.state.ahead ||
+            timeMinutes(a.state.match.s) - timeMinutes(b.state.match.s));
+        const hero = states[0];
+
+        $('#operationTime').textContent = `OPERATION STATUS · ${nowClock().slice(0, 5)}`;
+        $('#progressCount').textContent = `${done}／${matches.length || 310} 場完成`;
+        $('#currentStage').textContent = stageLabel(done);
+        $('#delayValue').textContent = sheetConnected ? '資料正常' : '等待同步';
+
+        if (!hero) {
+          $('#heroTeam').textContent = favorites.length ? '等待後續對戰' : '設定我的關注';
+          $('#heroCourt').innerHTML = '--<small>COURT／場地</small>';
+          $('#heroVersus').innerHTML = favorites.length
+            ? '尚無已公布的下一場<span>淘汰賽分流後將自動更新</span>'
+            : '選擇 1～3 隊<span>賽程接近時主動提醒</span>';
+          return;
+        }
+
+        const { match, ahead } = hero.state;
+        $('#heroTeam').textContent = hero.name;
+        $('#heroCourt').innerHTML = `${String(match.ct).padStart(2, '0')}<small>COURT／場地</small>`;
+        $('#heroVersus').innerHTML =
+          `VS　${esc(otherTeam(match, hero.name))}<span>${esc(match.code)}・${ahead ? `前方剩 ${ahead} 場` : '輪到本場'}・${match.s}</span>`;
+      }
+
+      function renderFavorites() {
+        const favorites = getFavorites();
+        $('#followCount').textContent = `FOLLOWING TEAMS · ${favorites.length}/3`;
+        if (!favorites.length) {
+          $('#favoriteCards').innerHTML =
+            '<div class="empty-state">尚未選擇關注隊伍<br>點擊下方按鈕加入 1～3 隊</div>';
+          return;
+        }
+        $('#favoriteCards').innerHTML = favorites.map((name) => {
+          const state = nextForTeam(name);
+          const team = teams.find((item) => teamName(item) === name);
+          if (!state) return `
+            <article class="card team-card wait">
+              <div class="team-head"><div><h3>${esc(name)}</h3><p>${esc(teamClub(team))}</p></div>
+              <span class="status-chip">等待分流</span></div>
+              <div class="team-next"><time>--:--</time><span>下一場尚未公布</span><b>—</b></div>
+            </article>`;
+          const { match, ahead } = state;
+          const urgent = ahead <= 2;
+          return `
+            <article class="card team-card ${urgent ? 'soon' : 'wait'}">
+              <div class="team-head"><div><h3>${esc(name)}</h3><p>${esc(teamClub(team))}</p></div>
+              <span class="status-chip ${urgent ? 'soon' : ''}">${ahead === 0 ? '輪到本場' : `前方剩${ahead}場`}</span></div>
+              <div class="team-next"><time>${match.s}</time><span>VS ${esc(otherTeam(match, name))}</span><b>場${match.ct}</b></div>
+            </article>`;
+        }).join('');
+      }
+
+      function liveMatches() {
+        const current = [];
+        for (let court = 1; court <= 10; court += 1) {
+          const queue = courtQueue(court).filter((match) => !results[match.n]?.done);
+          if (!queue.length) continue;
+          if (liveFilter === '準備上場') current.push(queue[1] || queue[0]);
+          else current.push(queue[0]);
+        }
+        if (liveFilter === '我的關注') {
+          const favorites = new Set(getFavorites());
+          return current.filter((match) => match._t?.some((team) => favorites.has(teamName(team))));
+        }
+        return current;
+      }
+
+      function renderLive() {
+        const list = liveMatches();
+        $('#liveCount').textContent = sheetConnected
+          ? `十面場地・資料已連線`
+          : `十面場地・賽程預覽`;
+        if (!list.length) {
+          $('#liveCards').innerHTML = '<div class="empty-state">目前沒有符合條件的場次</div>';
+          return;
+        }
+        $('#liveCards').innerHTML = list.map((match) => {
+          const score = results[match.n];
+          const a = teamName(match._t?.[0]) || '待定隊伍 A';
+          const b = teamName(match._t?.[1]) || '待定隊伍 B';
+          const eventDay = todayKey() === EVENT_DATE;
+          const status = score?.done ? '已完賽' : eventDay ? '準備／進行' : '表定賽程';
+          return `
+            <article class="card live-card">
+              <div class="live-top"><b>● 場地 ${String(match.ct).padStart(2, '0')}</b><span>#${match.n}・${esc(match.code)}・${match.s}</span></div>
+              <div class="score-line ${score && score.sa > score.sb ? 'winner' : ''}"><span>${esc(a)}</span><strong>${score?.sa ?? '—'}</strong></div>
+              <div class="score-line ${score && score.sb > score.sa ? 'winner' : ''}"><span>${esc(b)}</span><strong>${score?.sb ?? '—'}</strong></div>
+              <div class="live-foot"><span class="live-dot">${status}</span><span>${esc(match.stage)}・${esc(match.grp)}</span></div>
+            </article>`;
+        }).join('');
+      }
+
+      function renderChoices(query = '') {
+        const needle = query.trim().toLowerCase();
+        const filtered = teams.filter((team) =>
+          !needle || `${teamName(team)} ${teamClub(team)}`.toLowerCase().includes(needle)).slice(0, 70);
+        $('#teamChoices').innerHTML = filtered.map((team) => {
+          const name = teamName(team);
+          const selected = tempFavorites.includes(name);
+          return `<button class="choice ${selected ? 'selected' : ''}" type="button" data-team="${esc(name)}">
+            <span>${esc(name)}</span><small>${esc(teamClub(team))}　${selected ? '✓' : '＋'}</small></button>`;
+        }).join('') || '<div class="empty-state">找不到符合的隊伍</div>';
+        $('#saveFavorites').textContent = `完成設定・${tempFavorites.length}／3`;
+      }
+
+      function showToast(title, body) {
+        $('#toastTitle').textContent = title;
+        $('#toastBody').textContent = body;
+        $('#toast').classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 4600);
+      }
+
+      async function requestNotifications() {
+        if (!('Notification' in window)) {
+          showToast('此瀏覽器不支援通知', '仍會保留站內即時提醒。');
+          return;
+        }
+        const permission = await Notification.requestPermission();
+        showToast(permission === 'granted' ? '賽程提醒已開啟' : '尚未開啟通知',
+          permission === 'granted' ? '關注隊伍接近上場時會顯示提醒。' : '可在瀏覽器設定中重新允許通知。');
+      }
+
+      async function notify(title, body) {
+        showToast(title, body);
+        if (Notification.permission !== 'granted') return;
+        const registration = await navigator.serviceWorker?.ready;
+        if (registration) registration.showNotification(title, {
+          body, tag: title, renotify: true, icon: './icon.svg', badge: './icon.svg'
+        });
+      }
+
+      function checkFavoriteAlerts() {
+        if (!sheetConnected || todayKey() !== EVENT_DATE) return;
+        let sent = {};
+        try { sent = JSON.parse(localStorage.getItem(ALERTS_KEY) || '{}'); } catch {}
+        getFavorites().forEach((name) => {
+          const state = nextForTeam(name);
+          if (!state || state.ahead > 2) return;
+          const key = `${state.match.n}:${state.ahead}`;
+          if (sent[key]) return;
+          sent[key] = Date.now();
+          notify(`即將輪到｜${name}`,
+            `第${state.match.ct}場地前方剩餘${state.ahead}場・${state.match.s} 對 ${otherTeam(state.match, name)}`);
+        });
+        localStorage.setItem(ALERTS_KEY, JSON.stringify(sent));
+      }
+
+      function renderAll() {
+        renderStatus();
+        renderFavorites();
+        renderLive();
+      }
+
+      function openModal() {
+        tempFavorites = [...getFavorites()];
+        $('#teamSearch').value = '';
+        renderChoices();
+        $('#modal').classList.add('show');
+        $('#modal').setAttribute('aria-hidden', 'false');
+        $('#modal').inert = false;
+      }
+
+      function closeModal(save = false) {
+        if (save) {
+          saveFavorites(tempFavorites);
+          renderAll();
+        }
+        $('#modal').classList.remove('show');
+        $('#modal').setAttribute('aria-hidden', 'true');
+        $('#modal').inert = true;
+      }
+
+      prepareTeams();
+
+      const viewport = $('.viewport');
+      const navButtons = $$('.nav-btn');
+      const views = $$('.view');
+      navButtons.forEach((button) => button.addEventListener('click', () => {
+        const target = button.dataset.target;
+        navButtons.forEach((item) => item.classList.toggle('active', item === button));
+        views.forEach((view) => view.classList.toggle('active', view.dataset.view === target));
+        viewport.scrollTop = 0;
+      }));
+
+      $$('.filter-row .chip').forEach((chip) => chip.addEventListener('click', () => {
+        $$('.filter-row .chip').forEach((item) => item.classList.toggle('active', item === chip));
+        liveFilter = chip.textContent.trim();
+        renderLive();
+      }));
+
+      $('[data-open-modal]').addEventListener('click', openModal);
+      $('#saveFavorites').addEventListener('click', () => closeModal(true));
+      $('#modal').addEventListener('click', (event) => {
+        if (event.target === $('#modal')) closeModal(false);
+      });
+      $('#teamSearch').addEventListener('input', (event) => renderChoices(event.target.value));
+      $('#teamChoices').addEventListener('click', (event) => {
+        const choice = event.target.closest('[data-team]');
+        if (!choice) return;
+        const name = choice.dataset.team;
+        if (tempFavorites.includes(name)) tempFavorites = tempFavorites.filter((item) => item !== name);
+        else if (tempFavorites.length < 3) tempFavorites.push(name);
+        else {
+          showToast('最多關注 3 隊', '請先取消一隊，再加入新的關注隊伍。');
+          return;
+        }
+        renderChoices($('#teamSearch').value);
+      });
+      $('[data-close-toast]').addEventListener('click', () => $('#toast').classList.remove('show'));
+      $('[data-notify]').addEventListener('click', requestNotifications);
+      $('[data-test-toast]').addEventListener('click', () =>
+        showToast('即將輪到｜提醒測試', '通知版面與震動提示將在此顯示。'));
+      $('.alert-hero').addEventListener('click', () =>
+        navButtons.find((button) => button.dataset.target === 'mine')?.click());
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+      }
+
+      renderAll();
+      pollSheet();
+      window.setInterval(pollSheet, 45000);
+      window.setInterval(() => {
+        $('#operationTime').textContent = `OPERATION STATUS · ${nowClock().slice(0, 5)}`;
+      }, 30000);
+    })();
+  </script>
+</body>
+</html>

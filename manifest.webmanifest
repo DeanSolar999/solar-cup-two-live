@@ -1,0 +1,20 @@
+{
+  "name": "曜日盃 TWO｜行動戰情終端",
+  "short_name": "曜日盃 TWO",
+  "description": "曜日盃 TWO 當日賽務查詢、十面場地戰況、關注隊伍提醒與球團力場排行。",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#090a0d",
+  "theme_color": "#090a0d",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
