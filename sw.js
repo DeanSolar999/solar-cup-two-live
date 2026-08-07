@@ -1,4 +1,4 @@
-const CACHE = 'solar-cup-two-live-v2';
+const CACHE = 'solar-cup-two-live-v3';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon-512.png', './logo-sun.png'];
 
 self.addEventListener('install', (event) => {
@@ -16,14 +16,22 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // gviz 輪詢每次帶時間戳參數，唯一 URL 永不重用——不進 SW 快取，避免快取無限膨脹
+  if (event.request.url.includes('docs.google.com')) return;
   event.respondWith(
     fetch(event.request)
       .then((response) => {
         const copy = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        // opaque／跨網域回應 cache.put 可能 reject——快取失敗不影響回應本體
+        caches.open(CACHE).then((cache) => cache.put(event.request, copy)).catch(() => {});
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
+      .catch(() => caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        // 離線 fallback 只給頁面導覽；script/API 請求不得回 HTML（會被當 JS 執行炸掉）
+        if (event.request.mode === 'navigate') return caches.match('./index.html');
+        return Response.error();
+      }))
   );
 });
 

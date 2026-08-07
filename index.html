@@ -318,8 +318,41 @@
       background: rgba(255,255,255,.035);
       border: 1px solid transparent;
     }
-    .rank-row:first-child { border-color: rgba(255,210,26,.3); }
+    .rank-row.top { border-color: rgba(255,210,26,.3); }
     .rank-no { color: var(--yellow); font-size: 18px; font-weight: 1000; }
+    .rank-no .tied-mark {
+      display: block;
+      color: var(--yellow);
+      font-size: 8px;
+      font-style: normal;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .rank-row.standby .rank-no { color: var(--muted); }
+    .rank-club small .freeze { color: #ffcf33; font-weight: 800; font-style: normal; }
+    .podium-standby {
+      grid-column: 1 / -1;
+      min-height: 122px;
+      display: grid;
+      place-items: center;
+    }
+    .podium-card small .freeze-mini { margin-left: 3px; color: #ffcf33; font-size: 8px; }
+    .test-banner {
+      position: absolute;
+      z-index: 30;
+      left: 0;
+      right: 0;
+      bottom: 72px;
+      padding: 7px 10px;
+      background: #b3261e;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-align: center;
+      box-shadow: 0 -2px 12px rgba(0,0,0,.4);
+      pointer-events: none;
+    }
     .rank-club strong { display: block; font-size: 13px; }
     .rank-club small { color: var(--muted); font-size: 9px; }
     .rank-points { text-align: right; font-weight: 1000; }
@@ -507,6 +540,12 @@
     .podium-card strong { display: block; font-size: 12px; }
     .podium-card b { display: block; margin-top: 6px; color: var(--yellow); font-size: 16px; }
     .podium-card small { color: var(--muted); font-size: 9px; }
+    .podium-card .pd-rank { display: block; margin-bottom: 4px; }
+    /* DOM 依名次序（文件順序＝名次順序），視覺仍是中央高座：
+       第 1 張卡置中欄、第 2 張左欄、第 3 張右欄 */
+    .podium-card:nth-child(1) { grid-column: 2; grid-row: 1; }
+    .podium-card:nth-child(2) { grid-column: 1; grid-row: 1; }
+    .podium-card:nth-child(3) { grid-column: 3; grid-row: 1; }
 
     .bottom-nav {
       position: absolute;
@@ -691,8 +730,8 @@
       <div class="toast" id="toast" role="status" aria-live="polite">
         <div class="toast-icon">!</div>
         <div>
-          <strong id="toastTitle">即將輪到｜TF-ING</strong>
-          <span id="toastBody">第6場地前方剩餘2場・請留意戰情</span>
+          <strong id="toastTitle">提醒</strong>
+          <span id="toastBody">賽程接近時將在此顯示通知</span>
         </div>
         <button type="button" aria-label="關閉提醒" data-close-toast>×</button>
       </div>
@@ -719,11 +758,11 @@
               <strong>賽程推進</strong>
               <span id="progressCount">0／310 場完成</span>
             </div>
-            <div class="progress-strip">
-              <div class="phase done"><i></i><span>競資</span></div>
-              <div class="phase done"><i></i><span>休資</span></div>
-              <div class="phase done"><i></i><span>開幕</span></div>
-              <div class="phase live"><i></i><span>初賽</span></div>
+            <div class="progress-strip" id="statusStrip">
+              <div class="phase"><i></i><span>競資</span></div>
+              <div class="phase"><i></i><span>休資</span></div>
+              <div class="phase"><i></i><span>開幕</span></div>
+              <div class="phase"><i></i><span>初賽</span></div>
               <div class="phase"><i></i><span>複賽</span></div>
               <div class="phase"><i></i><span>決勝</span></div>
               <div class="phase"><i></i><span>頒獎</span></div>
@@ -739,22 +778,8 @@
               <strong>力場排行・球團總積分</strong>
               <span>查看全部 ›</span>
             </div>
-            <div class="ranking-preview">
-              <div class="rank-row">
-                <div class="rank-no">1</div>
-                <div class="rank-club"><strong>小羽宙</strong><small>晶鎧雷虎神・LV.18</small></div>
-                <div class="rank-points">1,860<small>＋100 AT</small></div>
-              </div>
-              <div class="rank-row">
-                <div class="rank-no">2</div>
-                <div class="rank-club"><strong>羽光</strong><small>聖輝獨角神駒・LV.18</small></div>
-                <div class="rank-points">1,800<small>差 60 AT</small></div>
-              </div>
-              <div class="rank-row">
-                <div class="rank-no">3</div>
-                <div class="rank-club"><strong>歡樂</strong><small>天風獅鷲神・LV.16</small></div>
-                <div class="rank-points">1,660<small>差 140 AT</small></div>
-              </div>
+            <div class="ranking-preview" id="fieldPreview">
+              <div class="empty-state">資料同步中</div>
             </div>
           </article>
         </section>
@@ -767,25 +792,7 @@
           </div>
 
           <div id="favoriteCards">
-          <article class="card team-card soon">
-            <div class="team-head">
-              <div><h3>TF-ING</h3><p>曜日二・競技組</p></div>
-              <span class="status-chip soon">前方剩2場</span>
-            </div>
-            <div class="team-next">
-              <time>14:05</time><span>VS 大叔隊</span><b>場6</b>
-            </div>
-          </article>
-
-          <article class="card team-card wait">
-            <div class="team-head">
-              <div><h3>羽球次等生</h3><p>曜請組・全循環</p></div>
-              <span class="status-chip">等待中</span>
-            </div>
-            <div class="team-next">
-              <time>15:05</time><span>VS 番茄嚇嚇叫</span><b>場9</b>
-            </div>
-          </article>
+            <div class="empty-state">資料載入中</div>
           </div>
 
           <button class="primary-btn" type="button" data-open-modal>＋ 新增／調整關注隊伍</button>
@@ -807,30 +814,10 @@
             <button class="chip active" type="button">現在進行</button>
             <button class="chip" type="button">準備上場</button>
             <button class="chip" type="button">我的關注</button>
-            <button class="chip" type="button">場地1–10</button>
           </div>
 
           <div id="liveCards">
-          <article class="card live-card">
-            <div class="live-top"><b>● 場地 01</b><span>競白初－A・13:50</span></div>
-            <div class="score-line winner"><span>琳達雙余座</span><strong>18</strong></div>
-            <div class="score-line"><span>我們想一下</span><strong>14</strong></div>
-            <div class="live-foot"><span class="live-dot">LIVE・進行中</span><span>下一場 14:05</span></div>
-          </article>
-
-          <article class="card live-card">
-            <div class="live-top"><b>● 場地 06</b><span>競白初－C・13:50</span></div>
-            <div class="score-line winner"><span>有點胖的R</span><strong>21</strong></div>
-            <div class="score-line"><span>Skip</span><strong>17</strong></div>
-            <div class="live-foot"><span class="live-dot">即將完賽</span><span>下場：TF-ING</span></div>
-          </article>
-
-          <article class="card live-card">
-            <div class="live-top"><b>● 場地 09</b><span>曜請 11・13:50</span></div>
-            <div class="score-line"><span>慈母手聰線</span><strong>11</strong></div>
-            <div class="score-line winner"><span>番茄嚇嚇叫</span><strong>16</strong></div>
-            <div class="live-foot"><span class="live-dot">LIVE・進行中</span><span>第 4 輪</span></div>
-          </article>
+            <div class="empty-state">資料載入中</div>
           </div>
         </section>
 
@@ -842,29 +829,34 @@
           </div>
 
           <article class="card">
-            <div class="card-title"><strong>四階級分流</strong><span>已確認 68／100 隊</span></div>
-            <div class="tier-grid">
-              <div class="tier platinum"><small>PLATINUM</small><h3>白金</h3><b>14／20 隊</b></div>
-              <div class="tier gold"><small>GOLD</small><h3>黃金</h3><b>14／20 隊</b></div>
-              <div class="tier silver"><small>SILVER</small><h3>白銀</h3><b>20／30 隊</b></div>
-              <div class="tier bronze"><small>BRONZE</small><h3>青銅</h3><b>20／30 隊</b></div>
+            <div class="card-title"><strong>四階級分流</strong><span id="tierConfirmed">資料同步中</span></div>
+            <div class="tier-grid" id="tierGrid">
+              <div class="tier platinum"><small>PLATINUM</small><h3>白金</h3><b>—／20 隊</b></div>
+              <div class="tier gold"><small>GOLD</small><h3>黃金</h3><b>—／20 隊</b></div>
+              <div class="tier silver"><small>SILVER</small><h3>白銀</h3><b>—／30 隊</b></div>
+              <div class="tier bronze"><small>BRONZE</small><h3>青銅</h3><b>—／30 隊</b></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-title"><strong>複賽晉級狀態</strong><span id="semiNote">同分判定</span></div>
+            <div class="bracket-mini" id="semiTied">
+              <div class="empty-state">資料同步中</div>
             </div>
           </article>
 
           <article class="card">
             <div class="card-title"><strong>我的關注・晉級狀態</strong><span>自動追蹤</span></div>
-            <div class="bracket-mini">
-              <div class="bracket-line"><i>01</i><span>TF-ING</span><b>白金・暫定</b></div>
-              <div class="bracket-line"><i>02</i><span>羽球次等生</span><b>曜請第5名</b></div>
-              <div class="bracket-line"><i>03</i><span>尚未選擇</span><b>＋加入</b></div>
+            <div class="bracket-mini" id="advanceFavorites">
+              <div class="empty-state">資料同步中</div>
             </div>
           </article>
 
           <article class="card">
-            <div class="card-title"><strong>階段路徑</strong><span>目前：階級初賽</span></div>
-            <div class="progress-strip">
-              <div class="phase done"><i></i><span>資格賽</span></div>
-              <div class="phase live"><i></i><span>初賽</span></div>
+            <div class="card-title"><strong>階段路徑</strong><span id="advanceStageNow">目前：—</span></div>
+            <div class="progress-strip" id="advanceStrip">
+              <div class="phase"><i></i><span>資格賽</span></div>
+              <div class="phase"><i></i><span>初賽</span></div>
               <div class="phase"><i></i><span>複賽</span></div>
               <div class="phase"><i></i><span>8強</span></div>
               <div class="phase"><i></i><span>4強</span></div>
@@ -881,33 +873,20 @@
             <small>球團總積分</small>
           </div>
 
-          <div class="podium">
-            <div class="podium-card">
-              <div class="mascot violet">羽</div>
-              <strong>羽光</strong><b>1,800</b><small>第2名</small>
-            </div>
-            <div class="podium-card first">
-              <div class="mascot">宙</div>
-              <strong>小羽宙</strong><b>1,860</b><small>LEADER・第1名</small>
-            </div>
-            <div class="podium-card">
-              <div class="mascot orange">歡</div>
-              <strong>歡樂</strong><b>1,660</b><small>第3名</small>
-            </div>
+          <div class="podium" id="fieldPodium">
+            <div class="empty-state podium-standby">資料同步中</div>
           </div>
 
           <article class="card">
-            <div class="card-title"><strong>完整排名</strong><span>最近變動：小羽宙＋100</span></div>
-            <div class="ranking-preview">
-              <div class="rank-row"><div class="rank-no">1</div><div class="rank-club"><strong>小羽宙</strong><small>領先60 AT</small></div><div class="rank-points">1,860<small>↑ 1</small></div></div>
-              <div class="rank-row"><div class="rank-no">2</div><div class="rank-club"><strong>羽光</strong><small>差距60 AT</small></div><div class="rank-points">1,800<small>—</small></div></div>
-              <div class="rank-row"><div class="rank-no">3</div><div class="rank-club"><strong>歡樂</strong><small>差距140 AT</small></div><div class="rank-points">1,660<small>↑ 2</small></div></div>
-              <div class="rank-row"><div class="rank-no">4</div><div class="rank-club"><strong>曜日二</strong><small>差距20 AT</small></div><div class="rank-points">1,640<small>↓ 1</small></div></div>
-              <div class="rank-row"><div class="rank-no">5</div><div class="rank-club"><strong>大船</strong><small>差距20 AT</small></div><div class="rank-points">1,620<small>—</small></div></div>
+            <div class="card-title"><strong>完整排名</strong><span id="fieldNote">資料同步中</span></div>
+            <div class="ranking-preview" id="fieldRanking">
+              <div class="empty-state">資料同步中</div>
             </div>
           </article>
         </section>
       </div>
+
+      <div class="test-banner" id="testBanner" role="status" hidden>⚠ 測試資料 · 非正式成績（賽務演練中）</div>
 
       <nav class="bottom-nav" aria-label="主要導覽">
         <button class="nav-btn active" type="button" data-target="status">
@@ -932,13 +911,8 @@
           <h2>設定我的關注</h2>
           <p>選擇1～3隊，賽程接近時主動提醒。</p>
           <input class="search" id="teamSearch" type="search" placeholder="搜尋隊伍名稱或球團">
-          <div class="choices" id="teamChoices">
-            <button class="choice selected" type="button"><span>TF-ING</span><small>曜日二　✓</small></button>
-            <button class="choice selected" type="button"><span>羽球次等生</span><small>曜請組　✓</small></button>
-            <button class="choice" type="button"><span>琳達雙余座</span><small>小羽宙　＋</small></button>
-            <button class="choice" type="button"><span>大叔隊</span><small>自由組　＋</small></button>
-          </div>
-          <button class="primary-btn" id="saveFavorites" type="button" data-close-modal>完成設定・2／3</button>
+          <div class="choices" id="teamChoices"></div>
+          <button class="primary-btn" id="saveFavorites" type="button" data-close-modal>完成設定・0／3</button>
         </div>
       </div>
     </section>
@@ -950,16 +924,57 @@
     (() => {
       'use strict';
 
-      const SHEET_ID = '1KqX0AJKHU8TR-t0hUZLqB6jib0tL7BbR';
-      const SHEET_TAB = '8_發布_戰情看板';
-      const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_TAB)}`;
+      const SHEET_ID = '1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA';
+      // 六分頁一次輪詢：board=比分、qual=分流、total=止步/凍結、club=力場、
+      // semi=複賽晉級判定、setting=賽事設定（LIVE 開關 → 測試資料橫幅）
+      const TABS = {
+        board: '8_發布_戰情看板',
+        qual: '3_資格賽積分榜',
+        total: '6_積分總表',
+        club: '7_球團積分',
+        semi: '4b_複賽晉級',
+        setting: '0_賽事設定'
+      };
+      const gvizUrl = (tab) =>
+        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
       const FAVORITES_KEY = 'solar-cup-two-live:favorites:v1';
       const ALERTS_KEY = 'solar-cup-two-live:alerts:v1';
       const EVENT_DATE = '2026-08-15';
+      const QUAL_LAST = 150; // 場次 1–150＝資格賽，151–310＝淘汰賽＋曜請（同主站 live-data.js）
+      // 九大球團（full name 與 7_球團積分 A 欄完全一致；自由組不計排名）
+      const CLUB_META = [
+        { full: '歡樂羽球隊', letter: '歡', c: '#ff8a3c' },
+        { full: '小羽宙', letter: '宙', c: '#22d3ee' },
+        { full: '魄力羽球', letter: '魄', c: '#ff3ca6' },
+        { full: '大船羽球', letter: '船', c: '#6b6bff' },
+        { full: '狸貓拳羽球隊', letter: '狸', c: '#2ee6c8' },
+        { full: '蕩蕩歡樂羽球團', letter: '蕩', c: '#a3e635' },
+        { full: '羽光羽球團', letter: '光', c: '#a855f7' },
+        { full: '曜日一', letter: '一', c: '#ffb3d1' },
+        { full: '曜日二', letter: '二', c: '#ff9ec4' }
+      ];
+      const FREE_CLUB = '自由組';
+      // 過渡態：球團有隊伍卡在四強戰，名次分未結算（同主站 at-field-ranking SEMI_PENDING）
+      const SEMI_PENDING = { '四強': 1, '決賽中': 1, '季殿賽中': 1 };
+      const TIER_QUOTA = { '白金': 20, '黃金': 20, '白銀': 30, '青銅': 30 };
+      const TIER_ORDER = [
+        ['白金', 'platinum', 'PLATINUM'], ['黃金', 'gold', 'GOLD'],
+        ['白銀', 'silver', 'SILVER'], ['青銅', 'bronze', 'BRONZE']
+      ];
       const SC = window.SolarCupSchedule;
       const SD = window.SolarCupData;
       const matches = SC?.matches || [];
       const results = {};
+      // 每分頁「最後一次成功」的列快取：單分頁抓失敗時沿用舊資料，不炸整頁
+      const cloud = { board: null, qual: null, total: null, club: null, semi: null };
+      let knockoutStarted = false; // 場次 ≥151 出現隊名＋比分齊全的完賽 → 力場開閘
+      let qualDoneCount = 0;
+      let qualByName = {};   // 隊名 → { group, wins, tier }（3_資格賽積分榜）
+      let groupWins = {};    // 組別 → 勝場加總（=6 代表該組 6 場全完賽、分流定案）
+      let stopByName = {};   // 隊名 → { type, club, stop }（6_積分總表 採用止步）
+      let semiByName = {};   // 隊名 → 4b_複賽晉級 I 欄判定
+      let clubRows = null;   // 7_球團積分（排除自由組）
+      let liveSwitch = null; // 0_賽事設定 LIVE 開關：0＝演練（掛測試橫幅）、1＝正式、null＝讀不到
       let sheetConnected = false;
       let liveFilter = '現在進行';
       let toastTimer;
@@ -986,6 +1001,7 @@
       const teamClub = (team) => team?.clubFull || team?.clubObj?.full || team?.club?.full ||
         team?.clubObj?.name || team?.club?.name || team?.club || team?.track || '賽事隊伍';
 
+      let seedPairs = () => {};
       function prepareTeams() {
         if (!SD?.buildAllTeams) return;
         const built = SD.buildAllTeams();
@@ -1006,20 +1022,25 @@
           296:[3,5],310:[3,6],258:[3,7],159:[4,5],189:[4,6],286:[4,7],
           285:[5,6],190:[5,7],160:[6,7]
         };
-        const counters = {};
-        matches.forEach((match) => {
-          if (match.stage === '資格賽') {
-            const slot = counters[match.code] || 0;
-            counters[match.code] = slot + 1;
-            const group = grouped[match.code];
-            if (group?.length >= 4) {
-              const pair = rr[slot % 6];
-              match._t = [group[pair[0]], group[pair[1]]];
+        // 名冊預配對（資格賽 RR＋曜請對戰表）獨立成函式：
+        // hydrateBoard 每輪清掉全部 _t 後重播，雲端改名/清名不會留下舊配對殘影
+        seedPairs = () => {
+          const counters = {};
+          matches.forEach((match) => {
+            if (match.stage === '資格賽') {
+              const slot = counters[match.code] || 0;
+              counters[match.code] = slot + 1;
+              const group = grouped[match.code];
+              if (group?.length >= 4) {
+                const pair = rr[slot % 6];
+                match._t = [group[pair[0]], group[pair[1]]];
+              }
+            } else if (match.grp === '曜請組' && yao[match.n] && invite.length >= 8) {
+              match._t = yao[match.n].map((index) => invite[index]);
             }
-          } else if (match.grp === '曜請組' && yao[match.n] && invite.length >= 8) {
-            match._t = yao[match.n].map((index) => invite[index]);
-          }
-        });
+          });
+        };
+        seedPairs();
       }
 
       function parseCSV(text) {
@@ -1045,10 +1066,17 @@
         return rows;
       }
 
-      function hydrateSheet(csv) {
-        const rows = parseCSV(csv);
-        if (!rows.length) return;
-        const header = rows.shift().map((cell) => cell.trim());
+      // 空字串／「—」視為無值；自動去千分位（同主站 live-data.js num()）
+      const numCell = (value) => {
+        const s = String(value ?? '').trim();
+        if (!s || s === '—' || s === '-' || s === '－') return null;
+        const n = Number.parseFloat(s.replace(/,/g, ''));
+        return Number.isFinite(n) ? n : null;
+      };
+
+      function hydrateBoard(rows) {
+        if (!rows || rows.length < 2) return;
+        const header = rows[0].map((cell) => cell.trim());
         const column = (name) => header.indexOf(name);
         const cN = column('場次編號');
         const cA = column('隊A');
@@ -1058,40 +1086,197 @@
         if (cN < 0) return;
 
         Object.keys(results).forEach((key) => delete results[key]);
-        rows.forEach((cells) => {
+        knockoutStarted = false;
+        qualDoneCount = 0;
+        // 先清全部舊配對再從名冊重播，雲端本輪沒給名字的場次不得殘留上一輪的隊伍
+        matches.forEach((match) => { delete match._t; });
+        seedPairs();
+        rows.slice(1).forEach((cells) => {
           const number = Number.parseInt(cells[cN], 10);
-          const match = matches.find((item) => item.n === number);
-          if (!match) return;
+          if (!Number.isFinite(number)) return;
           const aName = String(cells[cA] || '').trim();
           const bName = String(cells[cB] || '').trim();
+          const scoreA = Number.parseInt(cells[cSA], 10);
+          const scoreB = Number.parseInt(cells[cSB], 10);
+          // 21 分制無 0:0——分數欄誤留 0/0 不算完賽（力場不得因此開閘）
+          const hasScores = Number.isFinite(scoreA) && Number.isFinite(scoreB) && (scoreA + scoreB) > 0;
+          if (hasScores) {
+            if (number <= QUAL_LAST) {
+              results[number] = { sa: scoreA, sb: scoreB, done: true };
+              qualDoneCount += 1;
+            } else if (aName && bName) {
+              // 淘汰賽隊名抽籤後才填：隊名＋比分齊全才算完賽、才開閘；
+              // 「有分數沒隊名」的誤觸列不計入進度也不開閘（同主站 live-data.js）
+              results[number] = { sa: scoreA, sb: scoreB, done: true };
+              knockoutStarted = true;
+            }
+          }
+          const match = matches.find((item) => item.n === number);
+          if (!match) return;
           if (aName && bName) {
             match._t = [
               teams.find((team) => teamName(team) === aName) || { label: aName },
               teams.find((team) => teamName(team) === bName) || { label: bName }
             ];
           }
-          const scoreA = Number.parseInt(cells[cSA], 10);
-          const scoreB = Number.parseInt(cells[cSB], 10);
-          if (Number.isFinite(scoreA) && Number.isFinite(scoreB)) {
-            results[number] = { sa: scoreA, sb: scoreB, done: true };
+        });
+      }
+
+      // 3_資格賽積分榜：編號,隊名,賽別,組別,勝場,總得分,總失分,得失分差,失分率,組內排名,自動晉級
+      // 21 分制無平手 → 每組勝場加總 = 已完賽場數；=6 代表該組分流定案。
+      // 賽前後端「自動晉級」欄因全隊並列第 1 會全填白金/白銀（主站力場閘門的已知陷阱），
+      // 所以分流統計只計入「該組 6 場全完賽」的隊伍，未定案一律視為分流中。
+      // 欄名索引小工具：表頭找不到欄名回 -1，取值一律經 cellAt 防呆
+      const headerOf = (rows) => rows[0].map((cell) => String(cell || '').trim());
+      const cellAt = (r, i) => (i >= 0 ? String(r[i] || '').trim() : '');
+
+      function hydrateQual(rows) {
+        qualByName = {};
+        groupWins = {};
+        if (!rows || rows.length < 2) return;
+        const h = headerOf(rows);
+        const cName = h.indexOf('隊名');
+        const cGroup = h.indexOf('組別');
+        const cWins = h.indexOf('勝場');
+        const cTier = h.indexOf('自動晉級');
+        rows.slice(1).forEach((r) => {
+          const name = cellAt(r, cName);
+          if (!name) return;
+          const group = cellAt(r, cGroup);
+          const wins = numCell(cellAt(r, cWins)) || 0;
+          qualByName[name] = { group, wins, tier: cellAt(r, cTier) };
+          if (group) groupWins[group] = (groupWins[group] || 0) + wins;
+        });
+      }
+      const groupDone = (group) => (groupWins[group] || 0) >= 6;
+
+      // 6_積分總表：取 隊名/賽別/代表球團/採用止步 四欄（欄名索引，防後端插欄）
+      function hydrateTotal(rows) {
+        stopByName = {};
+        if (!rows || rows.length < 2) return;
+        const h = headerOf(rows);
+        const cName = h.indexOf('隊名');
+        const cType = h.indexOf('賽別');
+        const cClub = h.indexOf('代表球團');
+        const cStop = h.indexOf('採用止步');
+        rows.slice(1).forEach((r) => {
+          const name = cellAt(r, cName);
+          if (!name) return;
+          stopByName[name] = {
+            type: cellAt(r, cType),
+            club: cellAt(r, cClub),
+            stop: cellAt(r, cStop)
+          };
+        });
+      }
+
+      // 4b_複賽晉級：只認「編號欄是數字」的資料列，「晉級」欄＝判定結果
+      //（晉級／複賽止步／⚠ 並列待判定／循環進行中）。判定規則後端算好，前端不得重算。
+      function hydrateSemi(rows) {
+        semiByName = {};
+        if (!rows || rows.length < 2) return;
+        const h = headerOf(rows);
+        const cName = h.indexOf('隊名');
+        const cId = h.indexOf('編號');
+        const cVerdict = h.indexOf('晉級');
+        rows.forEach((r) => {
+          if (!Number.isFinite(Number.parseInt(cellAt(r, cId), 10))) return;
+          const name = cellAt(r, cName);
+          const verdict = cellAt(r, cVerdict);
+          if (name && verdict) semiByName[name] = verdict;
+        });
+      }
+
+      // 7_球團積分：取 代表球團/球團總分/競技組總分（欄名索引；自由組不計排名，排除）
+      function hydrateClub(rows) {
+        if (!rows || rows.length < 2) return;
+        const h = headerOf(rows);
+        const cClub = h.indexOf('代表球團');
+        const cTotal = h.indexOf('球團總分');
+        const cComp = h.indexOf('競技組總分');
+        const parsed = [];
+        rows.slice(1).forEach((r) => {
+          const club = cellAt(r, cClub);
+          if (!club || club === FREE_CLUB) return;
+          parsed.push({ club, total: numCell(cellAt(r, cTotal)), comp: numCell(cellAt(r, cComp)) });
+        });
+        clubRows = parsed;
+      }
+
+      // 0_賽事設定：找 A 欄以「LIVE開關」開頭的列取 B 欄（不得寫死 B12——
+      // gviz 會把開頭數列併成表頭，列號對不起來；同主站 live-data.js liveSwitchFrom）
+      function hydrateSetting(rows) {
+        liveSwitch = null;
+        (rows || []).forEach((r) => {
+          if (liveSwitch === null && String(r?.[0] || '').indexOf('LIVE開關') === 0) {
+            liveSwitch = numCell(r[1]);
           }
         });
-        sheetConnected = true;
+      }
+
+      // 表頭契約：gviz 對不存在的分頁名會回 HTTP 200＋第一張分頁內容，
+      // 只驗「列數 > 1」擋不住——每張表都要驗自己的特徵欄名，對不上就丟棄該次結果
+      function tabValid(key, rows) {
+        if (!rows || rows.length < 2) return false;
+        const h = headerOf(rows);
+        switch (key) {
+          case 'board': return h.includes('場次編號') && h.includes('分A');
+          case 'qual': return h.includes('自動晉級') && h.includes('組內排名');
+          case 'total': return h.includes('採用止步') && h.includes('隊伍總分');
+          case 'club': return h.includes('競技組總分') && h.includes('球團總分');
+          case 'semi': return String(h[0]).includes('複賽晉級') && h.includes('晉級');
+          case 'setting': return rows.some((r) => String(r?.[0] || '').indexOf('LIVE開關') === 0);
+          default: return false;
+        }
+      }
+
+      async function fetchTab(tab) {
+        const response = await fetch(`${gvizUrl(tab)}&_=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`gviz ${tab} HTTP ${response.status}`);
+        return parseCSV(await response.text());
       }
 
       async function pollSheet() {
-        try {
-          const response = await fetch(`${SHEET_URL}&_=${Date.now()}`, { cache: 'no-store' });
-          if (!response.ok) throw new Error('sheet');
-          hydrateSheet(await response.text());
+        const keys = Object.keys(TABS);
+        // 六分頁平行抓，單分頁失敗只記警告、沿用該分頁舊快取，不炸整頁
+        const outcomes = await Promise.all(keys.map((key) =>
+          fetchTab(TABS[key])
+            .then((rows) => ({ key, rows }))
+            .catch((err) => { console.warn('[SolarCup]', TABS[key], '抓取失敗', err); return { key, rows: null }; })));
+        let okCount = 0;
+        let boardFresh = false;
+        outcomes.forEach(({ key, rows }) => {
+          if (tabValid(key, rows)) {
+            cloud[key] = rows;
+            okCount += 1;
+            if (key === 'board') boardFresh = true;
+          } else if (rows) {
+            console.warn('[SolarCup]', TABS[key], '表頭契約不符，丟棄本次結果、沿用舊快取');
+          }
+        });
+        hydrateBoard(cloud.board);
+        hydrateQual(cloud.qual);
+        hydrateTotal(cloud.total);
+        hydrateSemi(cloud.semi);
+        hydrateClub(cloud.club);
+        hydrateSetting(cloud.setting);
+        // sheetConnected 跟著本輪實況走：全失敗要轉 false，「資料正常」不得與 RETRYING 同框
+        if (boardFresh) sheetConnected = true;
+        if (okCount === 0) sheetConnected = false;
+        // LIVE 開關＝0 → 掛測試資料橫幅；讀不到（null）不掛（fail-open，同主站策略）
+        $('#testBanner').hidden = liveSwitch !== 0;
+        if (okCount === keys.length) {
           $('#syncStatus').textContent = '● ONLINE';
           $('#updatedAt').textContent = `更新於 ${nowClock()}`;
-          renderAll();
-          checkFavoriteAlerts();
-        } catch {
+        } else if (okCount > 0) {
+          $('#syncStatus').textContent = '● PARTIAL';
+          $('#updatedAt').textContent = `部分同步 ${nowClock()}`;
+        } else {
           $('#syncStatus').textContent = '● RETRYING';
           $('#updatedAt').textContent = '暫用最後資料';
         }
+        renderAll();
+        checkFavoriteAlerts();
       }
 
       function getFavorites() {
@@ -1099,10 +1284,8 @@
           const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) || 'null');
           if (Array.isArray(saved)) return saved.slice(0, 3);
         } catch {}
-        const defaults = ['TF-ING', '羽球次等生'].filter((name) =>
-          teams.some((team) => teamName(team) === name));
-        localStorage.setItem(FAVORITES_KEY, JSON.stringify(defaults));
-        return defaults;
+        // 不預設任何隊伍：新用戶從 0/3 開始自選，不得被自動關注並收到別隊推播
+        return [];
       }
 
       function saveFavorites(names) {
@@ -1133,16 +1316,43 @@
         return teamName(match?._t?.find((team) => teamName(team) !== name)) || '待分流確認';
       }
 
+      // 決勝段（≥250）統一掛「決勝」前綴：與戰情燈條的「決勝」格、
+      // 晉級燈條的 8強/4強/決賽 三格同一套用語，不得互相打臉
       function stageLabel(done) {
-        if (done >= 298) return '決勝賽';
-        if (done >= 270) return '準決賽';
-        if (done >= 250) return '八強賽';
+        if (done >= 298) return '決勝・決賽';
+        if (done >= 270) return '決勝・準決賽';
+        if (done >= 250) return '決勝・八強賽';
         if (done >= 190) return '階級複賽';
         if (done >= 150) return '階級初賽';
         if (done >= 60) return '休閒資格賽';
         if (done > 0) return '競技資格賽';
         return todayKey() === EVENT_DATE ? '準備開賽' : '賽程已排定';
       }
+
+      // 階段燈條與 stageLabel() 共用同一組完賽數門檻（1/60/150/190/250/270/298/310），
+      // 不得另起爐灶——避免「目前階段」文字與燈條互相打臉。
+      const phaseSeg = (done, liveFrom, doneFrom) =>
+        done >= doneFrom ? 'done' : done >= liveFrom ? 'live' : '';
+      const stripHTML = (items) => items.map(([label, state]) =>
+        `<div class="phase ${state}"><i></i><span>${label}</span></div>`).join('');
+      const statusPhases = (done) => [
+        ['競資', phaseSeg(done, 1, 60)],
+        ['休資', phaseSeg(done, 60, 150)],
+        ['開幕', done >= 150 ? 'done' : ''],
+        ['初賽', phaseSeg(done, 150, 190)],
+        ['複賽', phaseSeg(done, 190, 250)],
+        ['決勝', phaseSeg(done, 250, 310)],
+        ['頒獎', done >= 310 ? 'live' : '']
+      ];
+      const advancePhases = (done) => [
+        ['資格賽', phaseSeg(done, 1, 150)],
+        ['初賽', phaseSeg(done, 150, 190)],
+        ['複賽', phaseSeg(done, 190, 250)],
+        ['8強', phaseSeg(done, 250, 270)],
+        ['4強', phaseSeg(done, 270, 298)],
+        ['決賽', phaseSeg(done, 298, 310)],
+        ['封王', done >= 310 ? 'live' : '']
+      ];
 
       function renderStatus() {
         const done = Object.keys(results).length;
@@ -1157,6 +1367,7 @@
         $('#progressCount').textContent = `${done}／${matches.length || 310} 場完成`;
         $('#currentStage').textContent = stageLabel(done);
         $('#delayValue').textContent = sheetConnected ? '資料正常' : '等待同步';
+        $('#statusStrip').innerHTML = stripHTML(statusPhases(done));
 
         if (!hero) {
           $('#heroTeam').textContent = favorites.length ? '等待後續對戰' : '設定我的關注';
@@ -1275,6 +1486,7 @@
 
       async function notify(title, body) {
         showToast(title, body);
+        if (!('Notification' in window)) return; // iOS Safari 無 Notification 物件
         if (Notification.permission !== 'granted') return;
         const registration = await navigator.serviceWorker?.ready;
         if (registration) registration.showNotification(title, {
@@ -1298,10 +1510,217 @@
         localStorage.setItem(ALERTS_KEY, JSON.stringify(sent));
       }
 
+      /* ===== 力場排行（任務 B）＝ 7_球團積分 唯讀直取，前端不重算積分 ===== */
+      const fmtPts = (n) => Number(n || 0).toLocaleString('en-US');
+
+      // 三態：sync（雲端沒就緒/球團對不上→整頁同步中，不半殘）
+      //     → standby（未開閘：總分 0、名次「—」，不顯示假名次）
+      //     → live（排序：球團總分 desc → 競技組總分 desc；兩層全同＝並列同名次）
+      function computeField() {
+        if (!cloud.club || !cloud.total || !cloud.board || !clubRows) return { state: 'sync' };
+        const byFull = {};
+        clubRows.forEach((row) => { byFull[row.club] = row; });
+        // 全有全無守衛：9 團任一在雲端對不上就整頁維持同步中（主站教訓，缺團會靜默混 0 分）
+        const missing = CLUB_META.filter((meta) => typeof byFull[meta.full]?.total !== 'number');
+        if (missing.length) {
+          console.warn('[力場] 球團名對不上雲端，維持同步中：', missing.map((m) => m.full).join('、'));
+          return { state: 'sync' };
+        }
+        if (!knockoutStarted) return { state: 'standby' };
+        const frozenClubs = {};
+        Object.keys(stopByName).forEach((name) => {
+          if (SEMI_PENDING[stopByName[name].stop]) frozenClubs[stopByName[name].club] = true;
+        });
+        const list = CLUB_META.map((meta) => ({
+          full: meta.full, letter: meta.letter, c: meta.c,
+          total: byFull[meta.full].total,
+          comp: byFull[meta.full].comp,
+          frozen: !!frozenClubs[meta.full]
+        }));
+        list.sort((a, b) => (b.total - a.total) || ((b.comp || 0) - (a.comp || 0)));
+        list.forEach((entry, i) => {
+          entry.rank = (i > 0 && entry.total === list[i - 1].total &&
+            (entry.comp || 0) === (list[i - 1].comp || 0)) ? list[i - 1].rank : i + 1;
+        });
+        list.forEach((entry) => {
+          entry.tied = list.filter((other) => other.rank === entry.rank).length > 1;
+        });
+        return { state: 'live', list };
+      }
+
+      function renderField() {
+        const field = computeField();
+        const podiumEl = $('#fieldPodium');
+        const rankingEl = $('#fieldRanking');
+        const previewEl = $('#fieldPreview');
+        const noteEl = $('#fieldNote');
+
+        if (field.state !== 'live') {
+          const standby = field.state === 'standby';
+          // 進度只寫「資格賽 X／150」（X／150 分母格式與戰情頁 X／310 同款）：
+          // 全數完賽後不寫「進行中」，且「進行中」不得與「淘汰賽」同行造成階段誤讀
+          const qualText = qualDoneCount >= QUAL_LAST
+            ? `資格賽 ${QUAL_LAST}／${QUAL_LAST} 全數完賽`
+            : `資格賽 ${qualDoneCount}／${QUAL_LAST}`;
+          const message = standby
+            ? `力場偵測未啟動<br>${qualText}・淘汰賽開打後全面展開`
+            : '資料同步中<br>正在等待雲端資料就緒';
+          podiumEl.innerHTML = `<div class="empty-state podium-standby">${message}</div>`;
+          rankingEl.innerHTML = CLUB_META.map((meta) => `
+            <div class="rank-row standby">
+              <div class="rank-no">—</div>
+              <div class="rank-club"><strong>${esc(meta.full)}</strong><small>${standby ? '待機中' : '同步中'}</small></div>
+              <div class="rank-points">${standby ? '0' : '—'}<small>AT</small></div>
+            </div>`).join('');
+          previewEl.innerHTML = `<div class="empty-state">${message}</div>`;
+          noteEl.textContent = standby ? '偵測未啟動' : '資料同步中';
+          return;
+        }
+
+        const list = field.list;
+        const leader = list[0];
+        const runner = list.find((entry) => entry.rank !== 1);
+        const gapLead = runner ? leader.total - runner.total : 0;
+        const rowHTML = (entry) => {
+          const gapText = entry.rank === 1
+            ? (entry.tied ? '並列領先' : `領先 ${fmtPts(gapLead)} AT`)
+            : `差距 ${fmtPts(leader.total - entry.total)} AT`;
+          return `
+            <div class="rank-row${entry.rank === 1 ? ' top' : ''}">
+              <div class="rank-no">${entry.rank}${entry.tied ? '<i class="tied-mark">並列</i>' : ''}</div>
+              <div class="rank-club"><strong>${esc(entry.full)}</strong><small>${gapText}${entry.frozen ? '・<b class="freeze">⏳ 待結算</b>' : ''}</small></div>
+              <div class="rank-points">${fmtPts(entry.total)}<small>競技 ${entry.comp == null ? '—' : fmtPts(entry.comp)}</small></div>
+            </div>`;
+        };
+        rankingEl.innerHTML = list.map(rowHTML).join('');
+        previewEl.innerHTML = list.slice(0, 3).map(rowHTML).join('');
+        const frozenCount = list.filter((entry) => entry.frozen).length;
+        noteEl.textContent = frozenCount ? `⏳ ${frozenCount} 團四強待結算` : 'LIVE・每 45 秒同步';
+
+        // podium：DOM 依名次序輸出（文件順序＝名次順序，閱讀器/文字抽取一致），
+        // 視覺由 CSS nth-child 排成中央高座；並列第 1 時每個 rank=1 卡都給 LEADER，
+        // 不得只給一團（v2.7 並列規則）。名次標籤放在隊名上方。
+        podiumEl.innerHTML = list.slice(0, 3).map((entry) => {
+          const isLead = entry.rank === 1;
+          const label = isLead
+            ? `LEADER・第1名${entry.tied ? '・並列' : ''}`
+            : `第${entry.rank}名${entry.tied ? '・並列' : ''}`;
+          return `
+            <div class="podium-card${isLead ? ' first' : ''}">
+              <div class="mascot" style="background:${entry.c}">${esc(entry.letter)}</div>
+              <small class="pd-rank">${label}${entry.frozen ? '<span class="freeze-mini">⏳ 待結算</span>' : ''}</small>
+              <strong>${esc(entry.full)}</strong><b>${fmtPts(entry.total)}</b>
+            </div>`;
+        }).join('');
+      }
+
+      /* ===== 晉級戰況（任務 C） ===== */
+      const tierBoxes = (counts) => TIER_ORDER.map(([name, cls, en]) =>
+        `<div class="tier ${cls}"><small>${en}</small><h3>${name}</h3><b>${counts[name]}／${TIER_QUOTA[name]} 隊</b></div>`).join('');
+
+      function teamRecord(name) {
+        let played = 0;
+        let wins = 0;
+        matches.forEach((match) => {
+          const score = results[match.n];
+          if (!score?.done || !match._t) return;
+          const index = match._t.findIndex((team) => teamName(team) === name);
+          if (index < 0) return;
+          played += 1;
+          if ((index === 0 && score.sa > score.sb) || (index === 1 && score.sb > score.sa)) wins += 1;
+        });
+        return { played, wins };
+      }
+
+      function advanceTier(name) {
+        const info = stopByName[name];
+        if (info?.type?.includes('曜請')) return '曜請組';
+        const q = qualByName[name];
+        if (q?.tier && groupDone(q.group)) return q.tier;
+        return '分流中';
+      }
+
+      // 狀態優先序：終態（冠亞季殿/八強止步/初賽止步）→ 四強過渡（待結算）→
+      // 複賽細分（4b_複賽晉級 I 欄：循環進行中/並列待判定/晉級，後端算好直取）→ 依已賽場次
+      function advanceStatus(name) {
+        const stop = (stopByName[name]?.stop || '').trim();
+        const final = stop && stop !== '—';
+        if (['冠軍', '亞軍', '季軍', '殿軍', '八強止步', '初賽止步'].includes(stop)) return stop;
+        if (stop === '四強') return '⏳ 四強戰・待結算';
+        if (stop === '決賽中') return '⏳ 決賽進行中';
+        if (stop === '季殿賽中') return '⏳ 季殿賽進行中';
+        const verdict = semiByName[name] || '';
+        if (stop === '複賽止步') {
+          if (verdict === '循環進行中') return '複賽循環中';
+          if (verdict.includes('並列')) return '⚠ 並列待判定';
+          return '複賽止步';
+        }
+        if (final) return stop; // 未知新標籤照後端顯示，不猜
+        if (verdict === '晉級') return '複賽晉級';
+        const record = teamRecord(name);
+        return record.played ? `已賽 ${record.played} 場・${record.wins} 勝` : '尚未開賽';
+      }
+
+      function renderAdvance() {
+        // ① 四階級分流：只計「該組 6 場全完賽」的自動晉級，未定案不當作已分流
+        const confirmedEl = $('#tierConfirmed');
+        if (!cloud.qual) {
+          confirmedEl.textContent = '資料同步中';
+          $('#tierGrid').innerHTML = tierBoxes({ 白金: '—', 黃金: '—', 白銀: '—', 青銅: '—' });
+        } else {
+          const counts = { 白金: 0, 黃金: 0, 白銀: 0, 青銅: 0 };
+          let confirmed = 0;
+          Object.keys(qualByName).forEach((name) => {
+            const q = qualByName[name];
+            if (!q.tier || !groupDone(q.group) || counts[q.tier] == null) return;
+            counts[q.tier] += 1;
+            confirmed += 1;
+          });
+          confirmedEl.textContent = `已確認 ${confirmed}／100 隊`;
+          $('#tierGrid').innerHTML = tierBoxes(counts);
+        }
+
+        // ②
+        // 複賽晉級狀態（全域視圖）：4b 的「⚠ 並列待判定」不能只藏在關注卡——
+        // 沒關注該隊就隱形，現場會漏看。把所有並列隊伍全數列出。
+        const semiNoteEl = $('#semiNote');
+        const semiTiedEl = $('#semiTied');
+        if (!cloud.semi) {
+          semiNoteEl.textContent = '同分判定';
+          semiTiedEl.innerHTML = '<div class="empty-state">資料同步中</div>';
+        } else {
+          const tiedNames = Object.keys(semiByName).filter((name) => semiByName[name].includes('並列'));
+          if (tiedNames.length) {
+            semiNoteEl.textContent = `${tiedNames.length} 隊待現場判定`;
+            semiTiedEl.innerHTML = tiedNames.map((name, i) => `
+              <div class="bracket-line"><i>${String(i + 1).padStart(2, '0')}</i>
+                <span>${esc(name)}</span><b>${esc(advanceTier(name))}・⚠ 並列待判定</b></div>`).join('');
+          } else {
+            semiNoteEl.textContent = '同分判定';
+            semiTiedEl.innerHTML = '<div class="empty-state">無待判定事項<br>複賽同分將依勝場→得失分率判定，全同時交現場人工裁定</div>';
+          }
+        }
+
+        // ③ 我的關注・晉級狀態
+        const favorites = getFavorites();
+        $('#advanceFavorites').innerHTML = favorites.length
+          ? favorites.map((name, i) => `
+              <div class="bracket-line"><i>${String(i + 1).padStart(2, '0')}</i>
+                <span>${esc(name)}</span><b>${esc(advanceTier(name))}・${esc(advanceStatus(name))}</b></div>`).join('')
+          : '<div class="empty-state">尚未選擇關注隊伍<br>到「我的」分頁加入 1～3 隊</div>';
+
+        // ④ 階段路徑：依已完賽場次動態推進（同 stageLabel 門檻）
+        const done = Object.keys(results).length;
+        $('#advanceStageNow').textContent = `目前：${stageLabel(done)}`;
+        $('#advanceStrip').innerHTML = stripHTML(advancePhases(done));
+      }
+
       function renderAll() {
         renderStatus();
         renderFavorites();
         renderLive();
+        renderAdvance();
+        renderField();
       }
 
       function openModal() {
@@ -1317,6 +1736,7 @@
         if (save) {
           saveFavorites(tempFavorites);
           renderAll();
+          checkFavoriteAlerts(); // 改完關注立即檢查是否已接近上場，不等下一輪輪詢
         }
         $('#modal').classList.remove('show');
         $('#modal').setAttribute('aria-hidden', 'true');
