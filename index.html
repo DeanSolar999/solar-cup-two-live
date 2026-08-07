@@ -310,7 +310,7 @@
     .ranking-preview { display: grid; gap: 8px; }
     .rank-row {
       display: grid;
-      grid-template-columns: 28px 1fr auto;
+      grid-template-columns: 28px 26px 1fr auto;
       align-items: center;
       gap: 10px;
       min-height: 43px;
@@ -318,6 +318,8 @@
       background: rgba(255,255,255,.035);
       border: 1px solid transparent;
     }
+    .remb { width: 26px; height: 26px; }
+    .remb svg { width: 100%; height: 100%; display: block; }
     .rank-row.top { border-color: rgba(255,210,26,.3); }
     .rank-no { color: var(--yellow); font-size: 18px; font-weight: 1000; }
     .rank-no .tied-mark {
@@ -525,18 +527,21 @@
       border-color: rgba(255,210,26,.42);
       background: linear-gradient(180deg, rgba(255,210,26,.1), rgba(255,255,255,.02));
     }
-    .mascot {
-      width: 48px;
-      height: 48px;
-      margin: 0 auto 8px;
-      display: grid;
-      place-items: center;
-      color: #111;
-      background: var(--yellow);
-      font-size: 21px;
-      font-weight: 1000;
-      clip-path: polygon(50% 0, 88% 20%, 100% 62%, 72% 100%, 27% 100%, 0 62%, 12% 20%);
+    .emb-p { width: 48px; height: 48px; margin: 0 auto 8px; }
+    .emb-p svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 0 8px rgba(255,255,255,.08)); }
+    .emb-xs {
+      flex: 0 0 18px;
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      margin-right: 7px;
+      vertical-align: -4px;
     }
+    .emb-xs svg { width: 100%; height: 100%; display: block; }
+    .team-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .team-emb { flex: 0 0 34px; width: 34px; height: 34px; }
+    .team-emb svg { width: 100%; height: 100%; display: block; }
+    .choice-name { display: inline-flex; align-items: center; min-width: 0; }
     .podium-card strong { display: block; font-size: 12px; }
     .podium-card b { display: block; margin-top: 6px; color: var(--yellow); font-size: 16px; }
     .podium-card small { color: var(--muted); font-size: 9px; }
@@ -682,8 +687,6 @@
       padding: 6px;
     }
     .wide-test { width: 100%; margin-top: 10px; }
-    .mascot.violet { background: #a855f7; }
-    .mascot.orange { background: #ff8a3c; }
 
     .note {
       margin-top: 12px;
@@ -941,18 +944,6 @@
       const ALERTS_KEY = 'solar-cup-two-live:alerts:v1';
       const EVENT_DATE = '2026-08-15';
       const QUAL_LAST = 150; // 場次 1–150＝資格賽，151–310＝淘汰賽＋曜請（同主站 live-data.js）
-      // 九大球團（full name 與 7_球團積分 A 欄完全一致；自由組不計排名）
-      const CLUB_META = [
-        { full: '歡樂羽球隊', letter: '歡', c: '#ff8a3c' },
-        { full: '小羽宙', letter: '宙', c: '#22d3ee' },
-        { full: '魄力羽球', letter: '魄', c: '#ff3ca6' },
-        { full: '大船羽球', letter: '船', c: '#6b6bff' },
-        { full: '狸貓拳羽球隊', letter: '狸', c: '#2ee6c8' },
-        { full: '蕩蕩歡樂羽球團', letter: '蕩', c: '#a3e635' },
-        { full: '羽光羽球團', letter: '光', c: '#a855f7' },
-        { full: '曜日一', letter: '一', c: '#ffb3d1' },
-        { full: '曜日二', letter: '二', c: '#ff9ec4' }
-      ];
       const FREE_CLUB = '自由組';
       // 過渡態：球團有隊伍卡在四強戰，名次分未結算（同主站 at-field-ranking SEMI_PENDING）
       const SEMI_PENDING = { '四強': 1, '決賽中': 1, '季殿賽中': 1 };
@@ -963,6 +954,13 @@
       ];
       const SC = window.SolarCupSchedule;
       const SD = window.SolarCupData;
+      // 球團單一來源＝主站 tournament-data.js 的 NINE（key/full/c 與徽章系統同源），
+      // 本檔不再自帶第二份球團表；SD 沒載入 → 九團不齊 → 力場守衛停在「資料同步中」
+      const CLUB_META = (SD?.NINE?.length === 9) ? SD.NINE : [];
+      const EMB_OK = !!(SD?.embChip && SD?.CLUB_BY_KEY);
+      // 徽章：embChip 需要 {key,c} 齊全；key 對不上 embMini（如曜請 inv1–8）會回空白中央
+      // ——一律以 CLUB_BY_KEY 有此 key 為前提才渲染，寧可不畫也不畫空心圈（主站 8/4 踩過的坑）
+      const embSVG = (club) => (EMB_OK && club?.key && SD.CLUB_BY_KEY[club.key]) ? SD.embChip(club) : '';
       const matches = SC?.matches || [];
       const results = {};
       // 每分頁「最後一次成功」的列快取：單分頁抓失敗時沿用舊資料，不炸整頁
@@ -1000,6 +998,12 @@
       const teamName = (team) => team?.label || team?.name || '';
       const teamClub = (team) => team?.clubFull || team?.clubObj?.full || team?.club?.full ||
         team?.clubObj?.name || team?.club?.name || team?.club || team?.track || '賽事隊伍';
+      // 隊伍 → 球團物件（曜請隊 clubKey=inv1–8 不在 CLUB_BY_KEY → 回 null、不畫徽章）
+      const teamClubObj = (team) => (team && SD?.CLUB_BY_KEY) ? SD.CLUB_BY_KEY[team.clubKey] : null;
+      const teamEmbXS = (name) => {
+        const svg = embSVG(teamClubObj(teams.find((item) => teamName(item) === name)));
+        return svg ? `<span class="emb-xs" aria-hidden="true">${svg}</span>` : '';
+      };
 
       let seedPairs = () => {};
       function prepareTeams() {
@@ -1396,9 +1400,12 @@
         $('#favoriteCards').innerHTML = favorites.map((name) => {
           const state = nextForTeam(name);
           const team = teams.find((item) => teamName(item) === name);
+          const emb = embSVG(teamClubObj(team));
+          const idBlock = `<div class="team-id">${emb ? `<span class="team-emb" aria-hidden="true">${emb}</span>` : ''}
+            <div><h3>${esc(name)}</h3><p>${esc(teamClub(team))}</p></div></div>`;
           if (!state) return `
             <article class="card team-card wait">
-              <div class="team-head"><div><h3>${esc(name)}</h3><p>${esc(teamClub(team))}</p></div>
+              <div class="team-head">${idBlock}
               <span class="status-chip">等待分流</span></div>
               <div class="team-next"><time>--:--</time><span>下一場尚未公布</span><b>—</b></div>
             </article>`;
@@ -1406,7 +1413,7 @@
           const urgent = ahead <= 2;
           return `
             <article class="card team-card ${urgent ? 'soon' : 'wait'}">
-              <div class="team-head"><div><h3>${esc(name)}</h3><p>${esc(teamClub(team))}</p></div>
+              <div class="team-head">${idBlock}
               <span class="status-chip ${urgent ? 'soon' : ''}">${ahead === 0 ? '輪到本場' : `前方剩${ahead}場`}</span></div>
               <div class="team-next"><time>${match.s}</time><span>VS ${esc(otherTeam(match, name))}</span><b>場${match.ct}</b></div>
             </article>`;
@@ -1460,8 +1467,9 @@
         $('#teamChoices').innerHTML = filtered.map((team) => {
           const name = teamName(team);
           const selected = tempFavorites.includes(name);
+          const emb = embSVG(teamClubObj(team));
           return `<button class="choice ${selected ? 'selected' : ''}" type="button" data-team="${esc(name)}">
-            <span>${esc(name)}</span><small>${esc(teamClub(team))}　${selected ? '✓' : '＋'}</small></button>`;
+            <span class="choice-name">${emb ? `<span class="emb-xs" aria-hidden="true">${emb}</span>` : ''}${esc(name)}</span><small>${esc(teamClub(team))}　${selected ? '✓' : '＋'}</small></button>`;
         }).join('') || '<div class="empty-state">找不到符合的隊伍</div>';
         $('#saveFavorites').textContent = `完成設定・${tempFavorites.length}／3`;
       }
@@ -1517,6 +1525,8 @@
       //     → standby（未開閘：總分 0、名次「—」，不顯示假名次）
       //     → live（排序：球團總分 desc → 競技組總分 desc；兩層全同＝並列同名次）
       function computeField() {
+        // 九團名單來自 SD.NINE——資料層腳本沒載入時名單不齊，整頁停在同步中
+        if (CLUB_META.length !== 9) return { state: 'sync' };
         if (!cloud.club || !cloud.total || !cloud.board || !clubRows) return { state: 'sync' };
         const byFull = {};
         clubRows.forEach((row) => { byFull[row.club] = row; });
@@ -1532,7 +1542,7 @@
           if (SEMI_PENDING[stopByName[name].stop]) frozenClubs[stopByName[name].club] = true;
         });
         const list = CLUB_META.map((meta) => ({
-          full: meta.full, letter: meta.letter, c: meta.c,
+          key: meta.key, full: meta.full, c: meta.c,
           total: byFull[meta.full].total,
           comp: byFull[meta.full].comp,
           frozen: !!frozenClubs[meta.full]
@@ -1566,9 +1576,11 @@
             ? `力場偵測未啟動<br>${qualText}・淘汰賽開打後全面展開`
             : '資料同步中<br>正在等待雲端資料就緒';
           podiumEl.innerHTML = `<div class="empty-state podium-standby">${message}</div>`;
+          // 待機/同步中也照常掛球團徽章——球團身分不因賽事未開始而未知
           rankingEl.innerHTML = CLUB_META.map((meta) => `
             <div class="rank-row standby">
               <div class="rank-no">—</div>
+              <span class="remb" aria-hidden="true">${embSVG(meta)}</span>
               <div class="rank-club"><strong>${esc(meta.full)}</strong><small>${standby ? '待機中' : '同步中'}</small></div>
               <div class="rank-points">${standby ? '0' : '—'}<small>AT</small></div>
             </div>`).join('');
@@ -1588,6 +1600,7 @@
           return `
             <div class="rank-row${entry.rank === 1 ? ' top' : ''}">
               <div class="rank-no">${entry.rank}${entry.tied ? '<i class="tied-mark">並列</i>' : ''}</div>
+              <span class="remb" aria-hidden="true">${embSVG(entry)}</span>
               <div class="rank-club"><strong>${esc(entry.full)}</strong><small>${gapText}${entry.frozen ? '・<b class="freeze">⏳ 待結算</b>' : ''}</small></div>
               <div class="rank-points">${fmtPts(entry.total)}<small>競技 ${entry.comp == null ? '—' : fmtPts(entry.comp)}</small></div>
             </div>`;
@@ -1607,7 +1620,7 @@
             : `第${entry.rank}名${entry.tied ? '・並列' : ''}`;
           return `
             <div class="podium-card${isLead ? ' first' : ''}">
-              <div class="mascot" style="background:${entry.c}">${esc(entry.letter)}</div>
+              <div class="emb-p" aria-hidden="true">${embSVG(entry)}</div>
               <small class="pd-rank">${label}${entry.frozen ? '<span class="freeze-mini">⏳ 待結算</span>' : ''}</small>
               <strong>${esc(entry.full)}</strong><b>${fmtPts(entry.total)}</b>
             </div>`;
@@ -1694,7 +1707,7 @@
             semiNoteEl.textContent = `${tiedNames.length} 隊待現場判定`;
             semiTiedEl.innerHTML = tiedNames.map((name, i) => `
               <div class="bracket-line"><i>${String(i + 1).padStart(2, '0')}</i>
-                <span>${esc(name)}</span><b>${esc(advanceTier(name))}・⚠ 並列待判定</b></div>`).join('');
+                <span>${teamEmbXS(name)}${esc(name)}</span><b>${esc(advanceTier(name))}・⚠ 並列待判定</b></div>`).join('');
           } else {
             semiNoteEl.textContent = '同分判定';
             semiTiedEl.innerHTML = '<div class="empty-state">無待判定事項<br>複賽同分將依勝場→得失分率判定，全同時交現場人工裁定</div>';
@@ -1706,7 +1719,7 @@
         $('#advanceFavorites').innerHTML = favorites.length
           ? favorites.map((name, i) => `
               <div class="bracket-line"><i>${String(i + 1).padStart(2, '0')}</i>
-                <span>${esc(name)}</span><b>${esc(advanceTier(name))}・${esc(advanceStatus(name))}</b></div>`).join('')
+                <span>${teamEmbXS(name)}${esc(name)}</span><b>${esc(advanceTier(name))}・${esc(advanceStatus(name))}</b></div>`).join('')
           : '<div class="empty-state">尚未選擇關注隊伍<br>到「我的」分頁加入 1～3 隊</div>';
 
         // ④ 階段路徑：依已完賽場次動態推進（同 stageLabel 門檻）
