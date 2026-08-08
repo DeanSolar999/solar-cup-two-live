@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#090a0d">
   <meta name="description" content="曜日盃 TWO 當日賽務查詢：賽程推進、十面場地、我的關注、晉級戰況與球團力場排行。">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="曜日盃 TWO">
@@ -541,7 +542,42 @@
     .team-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .team-emb { flex: 0 0 34px; width: 34px; height: 34px; }
     .team-emb svg { width: 100%; height: 100%; display: block; }
+    .team-emb.ph { border: 1px dashed var(--line); border-radius: 50%; opacity: .45; }
     .choice-name { display: inline-flex; align-items: center; min-width: 0; }
+    .icon-btn .dot[hidden] { display: none; }
+    .card-title .link-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 10px;
+      padding: 4px 0;
+    }
+    .qual-controls { display: grid; grid-template-columns: 110px 1fr; gap: 7px; margin-bottom: 10px; }
+    .qual-select {
+      min-height: 42px;
+      padding: 0 8px;
+      border: 1px solid var(--line);
+      background: #0b0d11;
+      color: var(--cream);
+    }
+    .qual-controls .search { min-height: 42px; }
+    .qrow {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr) 22px 58px 42px 34px;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 6px;
+      padding: 8px 8px;
+      background: rgba(255,255,255,.035);
+      font-size: 11px;
+      border: 1px solid transparent;
+    }
+    .qrow.head { padding: 0 8px; margin-bottom: 4px; background: transparent; color: var(--muted); font-size: 9px; }
+    .qrow.hit { border-color: rgba(255,210,26,.45); }
+    .qrow .qn { color: var(--yellow); font-weight: 900; }
+    .qrow .qname { display: inline-flex; align-items: center; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 700; }
+    .qrow .qtier { color: var(--muted); }
     .podium-card strong { display: block; font-size: 12px; }
     .podium-card b { display: block; margin-top: 6px; color: var(--yellow); font-size: 16px; }
     .podium-card small { color: var(--muted); font-size: 9px; }
@@ -633,11 +669,30 @@
     }
     .modal.show { display: flex; }
     .sheet {
+      position: relative;
       width: 100%;
+      /* 上方保留 64px 背景遮罩帶：看得到、也點得到（點背景＝取消關閉） */
+      max-height: calc(100% - 64px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       padding: 18px 15px calc(18px + env(safe-area-inset-bottom));
       background: #11141a;
       border-top: 1px solid rgba(255,210,26,.3);
       animation: sheet .24s ease-out;
+    }
+    .sheet-x {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--panel);
+      color: var(--cream);
+      cursor: pointer;
+      font-size: 17px;
+      line-height: 1;
     }
     @keyframes sheet { from { transform: translateY(60px); opacity: .3; } }
     .sheet h2 { margin: 0 0 4px; font-size: 21px; }
@@ -672,13 +727,6 @@
       font-size: 12px;
       line-height: 1.7;
     }
-    .connection-note {
-      margin: -5px 0 12px;
-      color: var(--muted);
-      font-size: 10px;
-      line-height: 1.5;
-    }
-    .connection-note b { color: #8ee8b2; }
     .team-remove {
       border: 0;
       background: transparent;
@@ -725,7 +773,7 @@
         <div class="top-actions">
           <div class="sync" id="syncStatus">● CONNECTING</div>
           <button class="icon-btn" type="button" aria-label="開啟賽程提醒" data-notify>
-            <span aria-hidden="true">⌁</span><i class="dot"></i>
+            <span aria-hidden="true">⌁</span><i class="dot" id="notifyDot" hidden></i>
           </button>
         </div>
       </header>
@@ -779,7 +827,7 @@
           <article class="card">
             <div class="card-title">
               <strong>力場排行・球團總積分</strong>
-              <span>查看全部 ›</span>
+              <button class="link-btn" type="button" data-goto="field">查看全部 ›</button>
             </div>
             <div class="ranking-preview" id="fieldPreview">
               <div class="empty-state">資料同步中</div>
@@ -800,7 +848,8 @@
 
           <button class="primary-btn" type="button" data-open-modal>＋ 新增／調整關注隊伍</button>
           <div class="note">
-            提醒依照真實賽程推進觸發，而非只依表定時間。前方剩2場時預告，前一場進行中時通知至場邊準備。
+            提醒依照真實賽程推進觸發，而非只依表定時間。前方剩2場時預告，前一場進行中時通知至場邊準備。<br>
+            通知僅在 App 開啟時運作（含背景分頁，視系統而定）；iPhone 需先「加入主畫面」後開啟通知。
           </div>
           <button class="ghost-btn wide-test" type="button" data-test-toast>
             模擬「即將上場」提醒
@@ -817,6 +866,7 @@
             <button class="chip active" type="button">現在進行</button>
             <button class="chip" type="button">準備上場</button>
             <button class="chip" type="button">我的關注</button>
+            <button class="chip" type="button">剛完賽</button>
           </div>
 
           <div id="liveCards">
@@ -839,6 +889,15 @@
               <div class="tier silver"><small>SILVER</small><h3>白銀</h3><b>—／30 隊</b></div>
               <div class="tier bronze"><small>BRONZE</small><h3>青銅</h3><b>—／30 隊</b></div>
             </div>
+          </article>
+
+          <article class="card">
+            <div class="card-title"><strong>資格賽戰況</strong><span id="qualGroupNote">組內排名</span></div>
+            <div class="qual-controls">
+              <select class="qual-select" id="qualGroupSel" aria-label="選擇組別"></select>
+              <input class="search" id="qualSearch" type="search" placeholder="搜尋隊名跳至該組" aria-label="搜尋隊名">
+            </div>
+            <div id="qualTable"><div class="empty-state">資料同步中</div></div>
           </article>
 
           <article class="card">
@@ -911,6 +970,7 @@
 
       <div class="modal" id="modal" aria-hidden="true" inert>
         <div class="sheet">
+          <button class="sheet-x" type="button" aria-label="關閉" data-close-x>×</button>
           <h2>設定我的關注</h2>
           <p>選擇1～3隊，賽程接近時主動提醒。</p>
           <input class="search" id="teamSearch" type="search" placeholder="搜尋隊伍名稱或球團">
@@ -952,6 +1012,10 @@
         ['白金', 'platinum', 'PLATINUM'], ['黃金', 'gold', 'GOLD'],
         ['白銀', 'silver', 'SILVER'], ['青銅', 'bronze', 'BRONZE']
       ];
+      // 資格賽 25 組（競資 A–J、休資 A–O，與 3_資格賽積分榜 組別欄一致）
+      const QUAL_GROUPS = [...'ABCDEFGHIJ'].map((ch) => `競資-${ch}`)
+        .concat([...'ABCDEFGHIJKLMNO'].map((ch) => `休資-${ch}`));
+      const qualView = { group: QUAL_GROUPS[0], hit: '' };
       const SC = window.SolarCupSchedule;
       const SD = window.SolarCupData;
       // 球團單一來源＝主站 tournament-data.js 的 NINE（key/full/c 與徽章系統同源），
@@ -991,10 +1055,20 @@
         const [h, m] = String(time || '00:00').split(':').map(Number);
         return h * 60 + m;
       };
-      const todayKey = () => {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      // 賽事日與延誤估算一律用台北時間判定，不吃裝置本地時鐘（主站 2026-08-02 教訓）
+      const TPE_FMT = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Taipei', hourCycle: 'h23',
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+      });
+      const taipeiNow = () => {
+        const parts = {};
+        TPE_FMT.formatToParts(new Date()).forEach((p) => { parts[p.type] = p.value; });
+        return {
+          date: `${parts.year}-${parts.month}-${parts.day}`,
+          minutes: Number(parts.hour) * 60 + Number(parts.minute)
+        };
       };
+      const todayKey = () => taipeiNow().date;
       const teamName = (team) => team?.label || team?.name || '';
       const teamClub = (team) => team?.clubFull || team?.clubObj?.full || team?.club?.full ||
         team?.clubObj?.name || team?.club?.name || team?.club || team?.track || '賽事隊伍';
@@ -1142,13 +1216,22 @@
         const cName = h.indexOf('隊名');
         const cGroup = h.indexOf('組別');
         const cWins = h.indexOf('勝場');
+        const cGf = h.indexOf('總得分');
+        const cGa = h.indexOf('總失分');
+        const cRatio = h.indexOf('失分率');
+        const cRank = h.indexOf('組內排名');
         const cTier = h.indexOf('自動晉級');
         rows.slice(1).forEach((r) => {
           const name = cellAt(r, cName);
           if (!name) return;
           const group = cellAt(r, cGroup);
           const wins = numCell(cellAt(r, cWins)) || 0;
-          qualByName[name] = { group, wins, tier: cellAt(r, cTier) };
+          qualByName[name] = {
+            group, wins,
+            gf: numCell(cellAt(r, cGf)), ga: numCell(cellAt(r, cGa)),
+            ratio: numCell(cellAt(r, cRatio)), rank: numCell(cellAt(r, cRank)),
+            tier: cellAt(r, cTier)
+          };
           if (group) groupWins[group] = (groupWins[group] || 0) + wins;
         });
       }
@@ -1240,6 +1323,32 @@
         return parseCSV(await response.text());
       }
 
+      // 六分頁快取落地 localStorage：斷網冷開先端出上次成功資料，
+      // 「暫用最後資料」才名副其實；輪詢成功後隨即覆蓋
+      const CLOUD_CACHE_KEY = 'solar-cup-two-live:cloud:v1';
+      function persistCloud() {
+        try { localStorage.setItem(CLOUD_CACHE_KEY, JSON.stringify(cloud)); } catch {}
+      }
+      function restoreCloud() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(CLOUD_CACHE_KEY) || 'null');
+          if (!saved) return false;
+          let restored = false;
+          Object.keys(TABS).forEach((key) => {
+            if (tabValid(key, saved[key])) { cloud[key] = saved[key]; restored = true; }
+          });
+          return restored;
+        } catch { return false; }
+      }
+      function hydrateAll() {
+        hydrateBoard(cloud.board);
+        hydrateQual(cloud.qual);
+        hydrateTotal(cloud.total);
+        hydrateSemi(cloud.semi);
+        hydrateClub(cloud.club);
+        hydrateSetting(cloud.setting);
+      }
+
       async function pollSheet() {
         const keys = Object.keys(TABS);
         // 六分頁平行抓，單分頁失敗只記警告、沿用該分頁舊快取，不炸整頁
@@ -1258,12 +1367,8 @@
             console.warn('[SolarCup]', TABS[key], '表頭契約不符，丟棄本次結果、沿用舊快取');
           }
         });
-        hydrateBoard(cloud.board);
-        hydrateQual(cloud.qual);
-        hydrateTotal(cloud.total);
-        hydrateSemi(cloud.semi);
-        hydrateClub(cloud.club);
-        hydrateSetting(cloud.setting);
+        hydrateAll();
+        if (okCount > 0) persistCloud(); // 有新資料才落地，避免用失敗輪覆蓋快取
         // sheetConnected 跟著本輪實況走：全失敗要轉 false，「資料正常」不得與 RETRYING 同框
         if (boardFresh) sheetConnected = true;
         if (okCount === 0) sheetConnected = false;
@@ -1339,10 +1444,11 @@
         done >= doneFrom ? 'done' : done >= liveFrom ? 'live' : '';
       const stripHTML = (items) => items.map(([label, state]) =>
         `<div class="phase ${state}"><i></i><span>${label}</span></div>`).join('');
-      const statusPhases = (done) => [
+      const statusPhases = (done, koDone) => [
         ['競資', phaseSeg(done, 1, 60)],
         ['休資', phaseSeg(done, 60, 150)],
-        ['開幕', done >= 150 ? 'done' : ''],
+        // 開幕中間態：資格賽 150 場全完、淘汰賽尚未落分 ＝ 開幕式進行中
+        ['開幕', done >= 150 ? (koDone > 0 ? 'done' : 'live') : ''],
         ['初賽', phaseSeg(done, 150, 190)],
         ['複賽', phaseSeg(done, 190, 250)],
         ['決勝', phaseSeg(done, 250, 310)],
@@ -1358,6 +1464,24 @@
         ['封王', done >= 310 ? 'live' : '']
       ];
 
+      // 延誤估算：台北現在時間 vs「最早一場尚未完賽場次」的表定結束時間。
+      // 全場準時時這個值 ≤0（下一場還沒到點）；落後 N 分代表「N 分鐘前就該打完的場次還沒回報」。
+      // 不可用「最後完賽場次的表定結束時間」當基準——場次 15 分鐘一格、中間有開幕式空檔，
+      // 那個基準在全場零延誤下也會自然長到 39 分，62% 的時間誤報落後（2026-08-08 複驗 505 分鐘模擬）。
+      function delayText() {
+        const tpe = taipeiNow();
+        if (tpe.date !== EVENT_DATE) return '—';
+        const anyDone = matches.some((match) => results[match.n]?.done);
+        if (!anyDone) return '等待開賽';
+        const pend = matches
+          .filter((match) => !results[match.n]?.done && match.e)
+          .map((match) => timeMinutes(match.e))
+          .sort((a, b) => a - b)[0];
+        if (pend == null) return '全部完賽';
+        const diff = tpe.minutes - pend;
+        return diff <= 5 ? '準時' : `較表定慢約 ${diff} 分`;
+      }
+
       function renderStatus() {
         const done = Object.keys(results).length;
         const favorites = getFavorites();
@@ -1370,8 +1494,9 @@
         $('#operationTime').textContent = `OPERATION STATUS · ${nowClock().slice(0, 5)}`;
         $('#progressCount').textContent = `${done}／${matches.length || 310} 場完成`;
         $('#currentStage').textContent = stageLabel(done);
-        $('#delayValue').textContent = sheetConnected ? '資料正常' : '等待同步';
-        $('#statusStrip').innerHTML = stripHTML(statusPhases(done));
+        $('#delayValue').textContent = sheetConnected ? delayText() : '等待同步';
+        const koDone = Object.keys(results).filter((n) => Number(n) > QUAL_LAST).length;
+        $('#statusStrip').innerHTML = stripHTML(statusPhases(done, koDone));
 
         if (!hero) {
           $('#heroTeam').textContent = favorites.length ? '等待後續對戰' : '設定我的關注';
@@ -1401,12 +1526,15 @@
           const state = nextForTeam(name);
           const team = teams.find((item) => teamName(item) === name);
           const emb = embSVG(teamClubObj(team));
-          const idBlock = `<div class="team-id">${emb ? `<span class="team-emb" aria-hidden="true">${emb}</span>` : ''}
+          // 無徽章（曜請隊）保留 34px 佔位，多張卡片左緣對齊
+          const idBlock = `<div class="team-id"><span class="team-emb${emb ? '' : ' ph'}" aria-hidden="true">${emb}</span>
             <div><h3>${esc(name)}</h3><p>${esc(teamClub(team))}</p></div></div>`;
+          const sideBlock = (chip) => `<span>${chip}
+            <button class="team-remove" type="button" data-remove="${esc(name)}" aria-label="移除關注 ${esc(name)}">✕</button></span>`;
           if (!state) return `
             <article class="card team-card wait">
               <div class="team-head">${idBlock}
-              <span class="status-chip">等待分流</span></div>
+              ${sideBlock('<span class="status-chip">等待分流</span>')}</div>
               <div class="team-next"><time>--:--</time><span>下一場尚未公布</span><b>—</b></div>
             </article>`;
           const { match, ahead } = state;
@@ -1414,23 +1542,36 @@
           return `
             <article class="card team-card ${urgent ? 'soon' : 'wait'}">
               <div class="team-head">${idBlock}
-              <span class="status-chip ${urgent ? 'soon' : ''}">${ahead === 0 ? '輪到本場' : `前方剩${ahead}場`}</span></div>
+              ${sideBlock(`<span class="status-chip ${urgent ? 'soon' : ''}">${ahead === 0 ? '輪到本場' : `前方剩${ahead}場`}</span>`)}</div>
               <div class="team-next"><time>${match.s}</time><span>VS ${esc(otherTeam(match, name))}</span><b>場${match.ct}</b></div>
             </article>`;
         }).join('');
       }
 
       function liveMatches() {
+        // 「剛完賽」：各場地最近一場已完賽（比分與 .winner 樣式在此可見）
+        if (liveFilter === '剛完賽') {
+          const recent = [];
+          for (let court = 1; court <= 10; court += 1) {
+            const doneQueue = courtQueue(court).filter((match) => results[match.n]?.done);
+            if (doneQueue.length) recent.push(doneQueue[doneQueue.length - 1]);
+          }
+          return recent;
+        }
+        // 「我的關注」：每支關注隊伍的下一場都出卡，不只掃各場地第一場
+        if (liveFilter === '我的關注') {
+          const cards = [];
+          getFavorites().forEach((name) => {
+            const state = nextForTeam(name);
+            if (state && !cards.includes(state.match)) cards.push(state.match);
+          });
+          return cards.sort((a, b) => timeMinutes(a.s) - timeMinutes(b.s) || a.n - b.n);
+        }
         const current = [];
         for (let court = 1; court <= 10; court += 1) {
           const queue = courtQueue(court).filter((match) => !results[match.n]?.done);
           if (!queue.length) continue;
-          if (liveFilter === '準備上場') current.push(queue[1] || queue[0]);
-          else current.push(queue[0]);
-        }
-        if (liveFilter === '我的關注') {
-          const favorites = new Set(getFavorites());
-          return current.filter((match) => match._t?.some((team) => favorites.has(teamName(team))));
+          current.push(liveFilter === '準備上場' ? (queue[1] || queue[0]) : queue[0]);
         }
         return current;
       }
@@ -1463,7 +1604,7 @@
       function renderChoices(query = '') {
         const needle = query.trim().toLowerCase();
         const filtered = teams.filter((team) =>
-          !needle || `${teamName(team)} ${teamClub(team)}`.toLowerCase().includes(needle)).slice(0, 70);
+          !needle || `${teamName(team)} ${teamClub(team)}`.toLowerCase().includes(needle));
         $('#teamChoices').innerHTML = filtered.map((team) => {
           const name = teamName(team);
           const selected = tempFavorites.includes(name);
@@ -1474,12 +1615,25 @@
         $('#saveFavorites').textContent = `完成設定・${tempFavorites.length}／3`;
       }
 
-      function showToast(title, body) {
-        $('#toastTitle').textContent = title;
-        $('#toastBody').textContent = body;
+      // 多隊同時觸發時排隊輪播，不互相覆蓋（系統通知已依 tag 分則，這裡只管站內橫幅）
+      const toastQueue = [];
+      let toastBusy = false;
+      function nextToast() {
+        const item = toastQueue.shift();
+        if (!item) { toastBusy = false; return; }
+        toastBusy = true;
+        $('#toastTitle').textContent = item[0];
+        $('#toastBody').textContent = item[1];
         $('#toast').classList.add('show');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 4600);
+        toastTimer = setTimeout(() => {
+          $('#toast').classList.remove('show');
+          setTimeout(nextToast, 350); // 等淡出動畫再接下一則
+        }, 3800);
+      }
+      function showToast(title, body) {
+        toastQueue.push([title, body]);
+        if (!toastBusy) nextToast();
       }
 
       async function requestNotifications() {
@@ -1488,8 +1642,11 @@
           return;
         }
         const permission = await Notification.requestPermission();
+        updateNotifyDot();
         showToast(permission === 'granted' ? '賽程提醒已開啟' : '尚未開啟通知',
-          permission === 'granted' ? '關注隊伍接近上場時會顯示提醒。' : '可在瀏覽器設定中重新允許通知。');
+          permission === 'granted'
+            ? '限 App 開啟時提醒；iPhone 需先加入主畫面。'
+            : '可在瀏覽器設定中重新允許通知。');
       }
 
       async function notify(title, body) {
@@ -1653,11 +1810,19 @@
         return '分流中';
       }
 
+      // 該隊是否還有「已排定對戰、未完賽」的場次（隊名已在對戰表、比分未進）
+      const hasPendingMatch = (name) => matches.some((match) =>
+        !results[match.n]?.done && match._t?.some((team) => teamName(team) === name));
+
       // 狀態優先序：終態（冠亞季殿/八強止步/初賽止步）→ 四強過渡（待結算）→
       // 複賽細分（4b_複賽晉級 I 欄：循環進行中/並列待判定/晉級，後端算好直取）→ 依已賽場次
       function advanceStatus(name) {
         const stop = (stopByName[name]?.stop || '').trim();
         const final = stop && stop !== '—';
+        // 賽中保護：止步推導是「查該隊最深出現在哪一輪」，該輪還沒打完就會提早掛止步標籤。
+        // 隊伍仍有未完賽場次 → 顯示「○○進行中」，不顯示止步終態
+        const STAGE_OF_STOP = { '初賽止步': '初賽', '複賽止步': '複賽', '八強止步': '八強' };
+        if (STAGE_OF_STOP[stop] && hasPendingMatch(name)) return `${STAGE_OF_STOP[stop]}進行中`;
         if (['冠軍', '亞軍', '季軍', '殿軍', '八強止步', '初賽止步'].includes(stop)) return stop;
         if (stop === '四強') return '⏳ 四強戰・待結算';
         if (stop === '決賽中') return '⏳ 決賽進行中';
@@ -1672,6 +1837,51 @@
         if (verdict === '晉級') return '複賽晉級';
         const record = teamRecord(name);
         return record.played ? `已賽 ${record.played} 場・${record.wins} 勝` : '尚未開賽';
+      }
+
+      // 資格賽戰況卡：單組 4 隊 勝場/總得失/失分率/組內排名/晉級（3_資格賽積分榜 唯讀直取）
+      const ratioText = (ratio) => {
+        if (ratio == null) return '—';
+        if (ratio >= 999) return '∞'; // 後端 GA=0 sentinel＝999
+        return (Math.round(ratio * 100) / 100).toFixed(2);
+      };
+      function renderQualCard() {
+        const tableEl = $('#qualTable');
+        const noteEl = $('#qualGroupNote');
+        if (!cloud.qual) {
+          noteEl.textContent = '組內排名';
+          tableEl.innerHTML = '<div class="empty-state">資料同步中</div>';
+          return;
+        }
+        const group = qualView.group;
+        const rows = Object.keys(qualByName)
+          .map((name) => ({ name, ...qualByName[name] }))
+          .filter((team) => team.group === group)
+          .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99) || a.name.localeCompare(b.name, 'zh-Hant'));
+        if (!rows.length) {
+          noteEl.textContent = group;
+          tableEl.innerHTML = '<div class="empty-state">查無此組資料</div>';
+          return;
+        }
+        const played = (groupWins[group] || 0) > 0;
+        const doneGroup = groupDone(group);
+        noteEl.textContent = `${group}・${doneGroup ? '已分流' : played ? '進行中' : '未開賽'}`;
+        tableEl.innerHTML = `
+          <div class="qrow head"><span>#</span><span>隊伍</span><span>勝</span><span>得／失</span><span>失分率</span><span>晉級</span></div>` +
+          rows.map((team) => `
+            <div class="qrow${team.name === qualView.hit ? ' hit' : ''}">
+              <span class="qn">${played && team.rank != null ? team.rank : '—'}</span>
+              <span class="qname">${teamEmbXS(team.name)}${esc(team.name)}</span>
+              <span>${team.wins ?? 0}</span>
+              <span>${team.gf ?? 0}／${team.ga ?? 0}</span>
+              <span>${played ? ratioText(team.ratio) : '—'}</span>
+              <span class="qtier">${doneGroup && team.tier ? esc(team.tier) : '待定'}</span>
+            </div>`).join('');
+      }
+
+      // 鈴鐺黃點＝通知權限已授予才亮
+      function updateNotifyDot() {
+        $('#notifyDot').hidden = !(('Notification' in window) && Notification.permission === 'granted');
       }
 
       function renderAdvance() {
@@ -1726,6 +1936,9 @@
         const done = Object.keys(results).length;
         $('#advanceStageNow').textContent = `目前：${stageLabel(done)}`;
         $('#advanceStrip').innerHTML = stripHTML(advancePhases(done));
+
+        // ⑤ 資格賽戰況（同輪重繪，控件不動）
+        renderQualCard();
       }
 
       function renderAll() {
@@ -1740,6 +1953,7 @@
         tempFavorites = [...getFavorites()];
         $('#teamSearch').value = '';
         renderChoices();
+        $('.sheet').scrollTop = 0; // 每次開啟都從標題與搜尋框開始
         $('#modal').classList.add('show');
         $('#modal').setAttribute('aria-hidden', 'false');
         $('#modal').inert = false;
@@ -1792,17 +2006,65 @@
         }
         renderChoices($('#teamSearch').value);
       });
-      $('[data-close-toast]').addEventListener('click', () => $('#toast').classList.remove('show'));
+      $('[data-close-toast]').addEventListener('click', () => {
+        clearTimeout(toastTimer);
+        $('#toast').classList.remove('show');
+        setTimeout(nextToast, 250); // 手動關閉後接續佇列
+      });
       $('[data-notify]').addEventListener('click', requestNotifications);
       $('[data-test-toast]').addEventListener('click', () =>
         showToast('即將輪到｜提醒測試', '通知版面與震動提示將在此顯示。'));
       $('.alert-hero').addEventListener('click', () =>
         navButtons.find((button) => button.dataset.target === 'mine')?.click());
+      // 「查看全部 ›」→ 力場分頁（與 .alert-hero 同款導頁）
+      $('[data-goto="field"]').addEventListener('click', () =>
+        navButtons.find((button) => button.dataset.target === 'field')?.click());
+      // 關注卡移除鈕（事件委派，卡片每輪重繪）
+      $('#favoriteCards').addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-remove]');
+        if (!btn) return;
+        saveFavorites(getFavorites().filter((name) => name !== btn.dataset.remove));
+        renderAll();
+        checkFavoriteAlerts();
+      });
+      // modal 出口三式：背景點擊（既有）＋ × 鈕 ＋ ESC；取消一律不動 favorites
+      $('[data-close-x]').addEventListener('click', () => closeModal(false));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && $('#modal').classList.contains('show')) closeModal(false);
+      });
+      // 資格賽戰況卡：組別選單＋隊名搜尋（控件為靜態 DOM，輪詢只重繪列，不奪焦點）
+      $('#qualGroupSel').innerHTML = QUAL_GROUPS.map((g) => `<option value="${g}">${g}</option>`).join('');
+      $('#qualGroupSel').addEventListener('change', (event) => {
+        qualView.group = event.target.value;
+        qualView.hit = '';
+        renderQualCard();
+      });
+      $('#qualSearch').addEventListener('input', (event) => {
+        const needle = event.target.value.trim().toLowerCase();
+        qualView.hit = '';
+        if (needle) {
+          const found = Object.keys(qualByName).find((name) => name.toLowerCase().includes(needle));
+          if (found) {
+            qualView.group = qualByName[found].group;
+            qualView.hit = found;
+            $('#qualGroupSel').value = qualView.group;
+          }
+        }
+        renderQualCard();
+      });
 
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
       }
 
+      // 冷開順序：先端出 localStorage 舊快照（斷網也有畫面）→ 立即輪詢雲端覆蓋
+      if (restoreCloud()) {
+        hydrateAll();
+        sheetConnected = false; // 快取非即時資料，等第一輪抓成功才轉「正常」
+        $('#updatedAt').textContent = '暫用最後資料（快取）';
+        $('#testBanner').hidden = liveSwitch !== 0;
+      }
+      updateNotifyDot();
       renderAll();
       pollSheet();
       window.setInterval(pollSheet, 45000);
