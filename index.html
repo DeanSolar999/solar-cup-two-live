@@ -340,6 +340,57 @@
       place-items: center;
     }
     .podium-card small .freeze-mini { margin-left: 3px; color: #ffcf33; font-size: 8px; }
+    /* 四階級分流卡 → 球團分佈浮層（獨立於關注 #modal，互不干擾） */
+    .tier[data-tier] { cursor: pointer; }
+    .tier[data-tier]:active, .tier[data-tier]:focus-visible { border-color: rgba(255,210,26,.45); }
+    .tier-modal {
+      position: absolute;
+      z-index: 52;
+      inset: 0;
+      display: none;
+      align-items: end;
+      background: rgba(0,0,0,.72);
+      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(5px);
+    }
+    .tier-modal.show { display: flex; }
+    .tier-pop {
+      position: relative;
+      width: 100%;
+      max-height: calc(100% - 64px); /* 同關注 modal：上方留遮罩帶可見可點 */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 18px 15px calc(18px + env(safe-area-inset-bottom));
+      background: #11141a;
+      border-top: 1px solid rgba(255,210,26,.3);
+      animation: sheet .24s ease-out;
+    }
+    .tier-pop h2 { margin: 0 0 4px; font-size: 24px; }
+    .tier-pop .tp-sub { margin: 0 0 13px; color: var(--muted); font-size: 13px; }
+    .tp-row {
+      display: grid;
+      grid-template-columns: 30px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 48px;
+      margin-bottom: 7px;
+      padding: 9px 10px;
+      background: rgba(255,255,255,.035);
+    }
+    .tp-row.zero { opacity: .45; }
+    .tp-row strong { display: block; font-size: 15px; }
+    .tp-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .tp-count { color: var(--yellow); font-size: 16px; font-weight: 1000; white-space: nowrap; }
+    .tp-ph { border: 1px dashed var(--line); border-radius: 50%; opacity: .5; }
+    .tp-total {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding-top: 11px;
+      border-top: 1px solid var(--line);
+      font-size: 14px;
+      font-weight: 800;
+    }
     .test-banner {
       position: absolute;
       z-index: 30;
@@ -491,10 +542,11 @@
     .tier small { color: var(--muted); font-size: 9px; }
     .tier h3 { margin: 5px 0 10px; font-size: 20px; }
     .tier b { font-size: 12px; }
-    .platinum { color: #d9ecff; }
-    .gold { color: var(--yellow); }
-    .silver { color: #c7cbd2; }
-    .bronze { color: #d88a52; }
+    /* 級別四色：runtime 由主站 TIER_META 寫入 --tc-*；hex 僅為載入失敗時的後備值 */
+    .platinum { color: var(--tc-plat, #4d9fff); }
+    .gold { color: var(--tc-gold, #ffcf33); }
+    .silver { color: var(--tc-silver, #ff4d6a); }
+    .bronze { color: var(--tc-bronze, #34e07a); }
 
     .bracket-mini { display: grid; gap: 8px; }
     .bracket-line {
@@ -960,10 +1012,10 @@
           <article class="card">
             <div class="card-title"><strong>四階級分流</strong><span id="tierConfirmed">資料同步中</span></div>
             <div class="tier-grid" id="tierGrid">
-              <div class="tier platinum"><small>PLATINUM</small><h3>白金</h3><b>—／20 隊</b></div>
-              <div class="tier gold"><small>GOLD</small><h3>黃金</h3><b>—／20 隊</b></div>
-              <div class="tier silver"><small>SILVER</small><h3>白銀</h3><b>—／30 隊</b></div>
-              <div class="tier bronze"><small>BRONZE</small><h3>青銅</h3><b>—／30 隊</b></div>
+              <div class="tier platinum" data-tier="白金" role="button" tabindex="0"><small>PLATINUM</small><h3>白金</h3><b>—／20 隊</b></div>
+              <div class="tier gold" data-tier="黃金" role="button" tabindex="0"><small>GOLD</small><h3>黃金</h3><b>—／20 隊</b></div>
+              <div class="tier silver" data-tier="白銀" role="button" tabindex="0"><small>SILVER</small><h3>白銀</h3><b>—／30 隊</b></div>
+              <div class="tier bronze" data-tier="青銅" role="button" tabindex="0"><small>BRONZE</small><h3>青銅</h3><b>—／30 隊</b></div>
             </div>
           </article>
 
@@ -1022,6 +1074,16 @@
             </div>
           </article>
         </section>
+      </div>
+
+      <div class="tier-modal" id="tierModal" aria-hidden="true" inert>
+        <div class="tier-pop">
+          <button class="sheet-x" type="button" aria-label="關閉" data-tier-close>×</button>
+          <h2 id="tierPopTitle">球團分佈</h2>
+          <p class="tp-sub" id="tierPopSub">已確認隊伍的球團歸屬</p>
+          <div id="tierPopBody"><div class="empty-state">資料同步中</div></div>
+          <div class="tp-total" id="tierPopTotal" hidden><span>合計</span><b>—</b></div>
+        </div>
       </div>
 
       <div class="test-banner" id="testBanner" role="status" hidden>⚠ 測試資料 · 非正式成績（賽務演練中）</div>
@@ -1101,6 +1163,16 @@
       // 徽章：embChip 需要 {key,c} 齊全；key 對不上 embMini（如曜請 inv1–8）會回空白中央
       // ——一律以 CLUB_BY_KEY 有此 key 為前提才渲染，寧可不畫也不畫空心圈（主站 8/4 踩過的坑）
       const embSVG = (club) => (EMB_OK && club?.key && SD.CLUB_BY_KEY[club.key]) ? SD.embChip(club) : '';
+      // 級別四色單一來源＝主站 TIER_META（白金藍/黃金黃/白銀紅/青銅綠，2026-08-08 團長定案）。
+      // 不寫死新 hex：主站改色，手機版自動跟。CSS 變數供 .tier 卡等純 CSS 處取用。
+      const TIER_COLOR = {};
+      Object.values(SD?.TIER_META || {}).forEach((meta) => {
+        if (meta?.name && meta?.col) TIER_COLOR[meta.name] = meta.col;
+      });
+      const tierColor = (name) => TIER_COLOR[name] || 'var(--yellow)';
+      [['plat', '白金'], ['gold', '黃金'], ['silver', '白銀'], ['bronze', '青銅']].forEach(([key, name]) => {
+        if (TIER_COLOR[name]) document.documentElement.style.setProperty(`--tc-${key}`, TIER_COLOR[name]);
+      });
       const matches = SC?.matches || [];
       const results = {};
       // 每分頁「最後一次成功」的列快取：單分頁抓失敗時沿用舊資料，不炸整頁
@@ -1154,6 +1226,9 @@
         const svg = embSVG(teamClubObj(teams.find((item) => teamName(item) === name)));
         return svg ? `<span class="emb-xs" aria-hidden="true">${svg}</span>` : '';
       };
+      // 級別名上色（白金/黃金/白銀/青銅才有色；曜請組/分流中維持原樣）
+      const tierLabel = (name) => TIER_COLOR[name]
+        ? `<span style="color:${tierColor(name)}">${esc(name)}</span>` : esc(name);
 
       let seedPairs = () => {};
       function prepareTeams() {
@@ -1667,9 +1742,11 @@
           const b = teamName(match._t?.[1]) || '待定隊伍 B';
           const eventDay = todayKey() === EVENT_DATE;
           const status = score?.done ? '已完賽' : eventDay ? '準備／進行' : '表定賽程';
+          // 級別點：● 依該場級別上色（主站 schedule tierStyle；資格賽「—」灰、未知維持黃）
+          const tierDotCol = SC?.tierStyle?.[match.tier]?.col;
           return `
             <article class="card live-card">
-              <div class="live-top"><b>● 場地 ${String(match.ct).padStart(2, '0')}</b><span>#${match.n}・${esc(match.code)}・${match.s}</span></div>
+              <div class="live-top"><b>${tierDotCol ? `<span style="color:${tierDotCol}">●</span>` : '●'} 場地 ${String(match.ct).padStart(2, '0')}</b><span>#${match.n}・${esc(match.code)}・${match.s}</span></div>
               <div class="score-line ${score && score.sa > score.sb ? 'winner' : ''}"><span>${esc(a)}</span><strong>${score?.sa ?? '—'}</strong></div>
               <div class="score-line ${score && score.sb > score.sa ? 'winner' : ''}"><span>${esc(b)}</span><strong>${score?.sb ?? '—'}</strong></div>
               <div class="live-foot"><span class="live-dot">${status}</span><span>${esc(match.stage)}・${esc(match.grp)}</span></div>
@@ -1862,7 +1939,20 @@
 
       /* ===== 晉級戰況（任務 C） ===== */
       const tierBoxes = (counts) => TIER_ORDER.map(([name, cls, en]) =>
-        `<div class="tier ${cls}"><small>${en}</small><h3>${name}</h3><b>${counts[name]}／${TIER_QUOTA[name]} 隊</b></div>`).join('');
+        `<div class="tier ${cls}" data-tier="${name}" role="button" tabindex="0" aria-label="${name}球團分佈">
+          <small>${en}</small><h3>${name}</h3><b>${counts[name]}／${TIER_QUOTA[name]} 隊</b></div>`).join('');
+
+      // 各級「已確認」隊名清單——與四階級分流卡同一道保守閘門（該組 6 場全完賽），
+      // 卡片計數與浮層合計都從這一份推導，不得另算一套
+      function confirmedTierTeams() {
+        const byTier = { 白金: [], 黃金: [], 白銀: [], 青銅: [] };
+        Object.keys(qualByName).forEach((name) => {
+          const q = qualByName[name];
+          if (!q.tier || !groupDone(q.group) || !byTier[q.tier]) return;
+          byTier[q.tier].push(name);
+        });
+        return byTier;
+      }
 
       function teamRecord(name) {
         let played = 0;
@@ -1951,8 +2041,82 @@
               <span>${team.wins ?? 0}</span>
               <span>${team.gf ?? 0}／${team.ga ?? 0}</span>
               <span>${played ? ratioText(team.ratio) : '—'}</span>
-              <span class="qtier">${doneGroup && team.tier ? esc(team.tier) : '待定'}</span>
+              <span class="qtier">${doneGroup && team.tier ? `<b style="color:${tierColor(team.tier)}">${esc(team.tier)}</b>` : '待定'}</span>
             </div>`).join('');
+      }
+
+      /* ── 分級卡浮層：該級各球團已確認隊伍分佈（獨立於關注 modal） ── */
+      let tierPopOpen = null; // 開著的級別名；輪詢 tick 時就地更新內容，不關閉、不重置捲動
+
+      function renderTierPop() {
+        if (!tierPopOpen) return;
+        const tier = tierPopOpen;
+        const color = tierColor(tier);
+        const titleEl = $('#tierPopTitle');
+        titleEl.textContent = `${tier} · 球團分佈`;
+        titleEl.style.color = color;
+        $('.tier-pop').style.borderTopColor = color;
+        const bodyEl = $('#tierPopBody');
+        const totalEl = $('#tierPopTotal');
+        if (!cloud.qual) {
+          $('#tierPopSub').textContent = '已確認隊伍的球團歸屬';
+          bodyEl.innerHTML = '<div class="empty-state">資料同步中</div>';
+          totalEl.hidden = true;
+          return;
+        }
+        // 與四階級分流卡同一份 confirmed 資料（confirmedTierTeams），合計必與卡面一致
+        const names = confirmedTierTeams()[tier] || [];
+        $('#tierPopSub').textContent = '該組 6 場全完賽才列入確認・每 45 秒自動更新';
+        if (!names.length) {
+          bodyEl.innerHTML = '<div class="empty-state">資格賽進行中，尚無隊伍確認分級</div>';
+        } else {
+          // 隊名 → 球團全名（SD.buildAllTeams clubFull；雲端積分榜無球團欄）
+          const order = CLUB_META.map((meta) => meta.full).concat([FREE_CLUB]);
+          const byClub = {};
+          order.forEach((full) => { byClub[full] = []; });
+          names.forEach((name) => {
+            const full = teamClub(teams.find((team) => teamName(team) === name));
+            (byClub[full] || (byClub[full] = [])).push(name); // 防禦：未知球團也收列
+          });
+          const rows = Object.keys(byClub).map((full) => ({
+            full,
+            list: byClub[full],
+            idx: order.indexOf(full) < 0 ? order.length : order.indexOf(full)
+          }));
+          // 隊數 desc；同數依 NINE 原順序；0 隊沉底降透明（仍顯示＝「還沒進來」也是資訊）
+          rows.sort((a, b) => (b.list.length - a.list.length) || (a.idx - b.idx));
+          bodyEl.innerHTML = rows.map((row) => {
+            const meta = CLUB_META.find((m) => m.full === row.full);
+            const emb = row.full === FREE_CLUB ? '' : embSVG(meta); // 自由組沿用無徽章佔位
+            return `
+              <div class="tp-row${row.list.length ? '' : ' zero'}">
+                <span class="remb${emb ? '' : ' tp-ph'}" aria-hidden="true">${emb}</span>
+                <div><strong>${esc(row.full)}</strong>${row.list.length ? `<small>${row.list.map(esc).join('、')}</small>` : ''}</div>
+                <b class="tp-count" style="color:${color}">${row.list.length} 隊</b>
+              </div>`;
+          }).join('');
+        }
+        totalEl.hidden = false;
+        totalEl.innerHTML = `<span>合計</span><b style="color:${color}">${names.length}／${TIER_QUOTA[tier]} 隊</b>`;
+      }
+
+      function openTierPop(tier) {
+        if (!TIER_QUOTA[tier]) return;
+        tierPopOpen = tier;
+        renderTierPop();
+        $('.tier-pop').scrollTop = 0; // 只有「開啟」重置捲動；輪詢更新不動
+        const modal = $('#tierModal');
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        modal.inert = false;
+      }
+
+      function closeTierPop() {
+        tierPopOpen = null;
+        const modal = $('#tierModal');
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.inert = true;
       }
 
       // 鈴鐺黃點＝通知權限已授予才亮
@@ -1967,13 +2131,12 @@
           confirmedEl.textContent = '資料同步中';
           $('#tierGrid').innerHTML = tierBoxes({ 白金: '—', 黃金: '—', 白銀: '—', 青銅: '—' });
         } else {
-          const counts = { 白金: 0, 黃金: 0, 白銀: 0, 青銅: 0 };
+          const byTier = confirmedTierTeams();
+          const counts = {};
           let confirmed = 0;
-          Object.keys(qualByName).forEach((name) => {
-            const q = qualByName[name];
-            if (!q.tier || !groupDone(q.group) || counts[q.tier] == null) return;
-            counts[q.tier] += 1;
-            confirmed += 1;
+          TIER_ORDER.forEach(([name]) => {
+            counts[name] = byTier[name].length;
+            confirmed += byTier[name].length;
           });
           confirmedEl.textContent = `已確認 ${confirmed}／100 隊`;
           $('#tierGrid').innerHTML = tierBoxes(counts);
@@ -1993,7 +2156,7 @@
             semiNoteEl.textContent = `${tiedNames.length} 隊待現場判定`;
             semiTiedEl.innerHTML = tiedNames.map((name, i) => `
               <div class="bracket-line"><i>${String(i + 1).padStart(2, '0')}</i>
-                <span>${teamEmbXS(name)}${esc(name)}</span><b>${esc(advanceTier(name))}・⚠ 並列待判定</b></div>`).join('');
+                <span>${teamEmbXS(name)}${esc(name)}</span><b>${tierLabel(advanceTier(name))}・⚠ 並列待判定</b></div>`).join('');
           } else {
             semiNoteEl.textContent = '同分判定';
             semiTiedEl.innerHTML = '<div class="empty-state">無待判定事項<br>複賽同分將依勝場→得失分率判定，全同時交現場人工裁定</div>';
@@ -2005,7 +2168,7 @@
         $('#advanceFavorites').innerHTML = favorites.length
           ? favorites.map((name, i) => `
               <div class="bracket-line"><i>${String(i + 1).padStart(2, '0')}</i>
-                <span>${teamEmbXS(name)}${esc(name)}</span><b>${esc(advanceTier(name))}・${esc(advanceStatus(name))}</b></div>`).join('')
+                <span>${teamEmbXS(name)}${esc(name)}</span><b>${tierLabel(advanceTier(name))}・${esc(advanceStatus(name))}</b></div>`).join('')
           : '<div class="empty-state">尚未選擇關注隊伍<br>到「我的」分頁加入 1～3 隊</div>';
 
         // ④ 階段路徑：依已完賽場次動態推進（同 stageLabel 門檻）
@@ -2015,6 +2178,9 @@
 
         // ⑤ 資格賽戰況（同輪重繪，控件不動）
         renderQualCard();
+
+        // ⑥ 分級浮層開著時就地更新（同一輪詢節奏；不關閉、不重置捲動）
+        renderTierPop();
       }
 
       function renderAll() {
@@ -2106,7 +2272,23 @@
       // modal 出口三式：背景點擊（既有）＋ × 鈕 ＋ ESC；取消一律不動 favorites
       $('[data-close-x]').addEventListener('click', () => closeModal(false));
       document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && $('#modal').classList.contains('show')) closeModal(false);
+        if (event.key !== 'Escape') return;
+        if ($('#tierModal').classList.contains('show')) { closeTierPop(); return; }
+        if ($('#modal').classList.contains('show')) closeModal(false);
+      });
+      // 分級卡 → 球團分佈浮層（點擊＋鍵盤），三出口：×／背景／ESC
+      $('#tierGrid').addEventListener('click', (event) => {
+        const card = event.target.closest('[data-tier]');
+        if (card) openTierPop(card.dataset.tier);
+      });
+      $('#tierGrid').addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const card = event.target.closest('[data-tier]');
+        if (card) { event.preventDefault(); openTierPop(card.dataset.tier); }
+      });
+      $('[data-tier-close]').addEventListener('click', closeTierPop);
+      $('#tierModal').addEventListener('click', (event) => {
+        if (event.target === $('#tierModal')) closeTierPop();
       });
       // 資格賽戰況卡：組別選單＋隊名搜尋（控件為靜態 DOM，輪詢只重繪列，不奪焦點）
       $('#qualGroupSel').innerHTML = QUAL_GROUPS.map((g) => `<option value="${g}">${g}</option>`).join('');
