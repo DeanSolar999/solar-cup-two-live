@@ -746,6 +746,82 @@
       line-height: 1.6;
     }
 
+    /* ===== 現場閱讀性放大（2026-08-08 團長指示） =====
+       球館內邊走邊看：內文 +15~20%、重點數字更大、圖標放大一檔、觸控目標 ≥44px。
+       佈局結構不變，僅欄寬微調容納；覆蓋式寫法集中一處，方便對照與回退。 */
+    select { font: inherit; }
+    .brand-copy strong { font-size: 16px; }
+    .brand-copy span { font-size: 11px; }
+    .sync { font-size: 11px; }
+    .icon-btn { width: 44px; height: 44px; }
+    .icon-btn .dot { width: 10px; height: 10px; }
+    .eyebrow { font-size: 11px; }
+    .page-heading h1 { font-size: 28px; }
+    .page-heading small { font-size: 13px; }
+    .card-title strong { font-size: 16px; }
+    .card-title span { font-size: 12px; }
+    #progressCount { font-size: 13px; font-weight: 800; color: var(--cream); }
+    .card-title .link-btn { font-size: 12px; }
+    .alert-label { font-size: 12px; }
+    .next-line h2 { font-size: 28px; }
+    .court-number { font-size: 52px; }
+    .court-number small { font-size: 10px; }
+    .versus { font-size: 16px; }
+    .versus span { font-size: 13px; }
+    .phase span { font-size: 10px; }
+    .stat b { font-size: 24px; }
+    .stat span { font-size: 12px; }
+    .rank-row { grid-template-columns: 30px 30px 1fr auto; }
+    .remb { width: 30px; height: 30px; }
+    .rank-no { font-size: 21px; }
+    .rank-no .tied-mark { font-size: 9px; }
+    .rank-club strong { font-size: 15px; }
+    .rank-club small { font-size: 11px; }
+    .rank-points { font-size: 18px; }
+    .rank-points small { font-size: 11px; }
+    .team-emb { flex-basis: 40px; width: 40px; height: 40px; }
+    .team-head h3 { font-size: 22px; }
+    .team-head p { font-size: 12px; }
+    .status-chip { font-size: 11px; }
+    .team-next time { font-size: 26px; }
+    .team-next span { font-size: 14px; }
+    .team-next b { font-size: 15px; }
+    .team-remove { min-width: 40px; min-height: 44px; display: grid; place-items: center; font-size: 15px; }
+    .chip { min-height: 44px; font-size: 13px; }
+    .live-card .live-top { font-size: 12px; }
+    .live-card .live-top b { font-size: 14px; }
+    .score-line { font-size: 16px; }
+    .score-line strong { font-size: 26px; }
+    .live-foot { font-size: 11px; }
+    .tier small { font-size: 10px; }
+    .tier h3 { font-size: 23px; }
+    .tier b { font-size: 14px; }
+    .bracket-line i { font-size: 12px; }
+    .bracket-line span { font-size: 14px; }
+    .bracket-line b { font-size: 12px; }
+    .emb-xs { flex-basis: 22px; width: 22px; height: 22px; margin-right: 8px; vertical-align: -5px; }
+    .qual-select, .qual-controls .search { min-height: 44px; }
+    .qrow { grid-template-columns: 22px minmax(0, 1fr) 24px 62px 44px 34px; font-size: 13px; }
+    .qrow.head { font-size: 10px; }
+    .podium-card strong { font-size: 14px; }
+    .podium-card b { font-size: 19px; }
+    .podium-card small { font-size: 10px; }
+    .podium-card small .freeze-mini { font-size: 9px; }
+    .emb-p { width: 56px; height: 56px; }
+    .nav-btn { font-size: 11px; }
+    .nav-btn svg { width: 25px; height: 25px; }
+    .toast { grid-template-columns: 38px 1fr auto; }
+    .toast-icon { width: 36px; height: 36px; }
+    .toast strong { font-size: 14px; }
+    .toast span { font-size: 12px; }
+    .toast button { font-size: 20px; }
+    .sheet h2 { font-size: 24px; }
+    .sheet p { font-size: 13px; }
+    .sheet-x { width: 40px; height: 40px; font-size: 19px; }
+    .empty-state { font-size: 14px; }
+    .note { font-size: 12px; }
+    .test-banner { font-size: 13px; }
+
     @media (max-width: 520px) {
       .stage { display: block; padding: 0; }
       .device {
