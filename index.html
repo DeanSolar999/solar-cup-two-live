@@ -2230,6 +2230,19 @@
         renderLive();
       }));
 
+      // Deep link 僅接受固定 token，絕不把 query 直接寫入 DOM／state。
+      // `recent` 是外部穩定 token，映射既有 UI 字串「剛完賽」。
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const view = params.get('view');
+        const filter = params.get('filter');
+        if (view !== 'live') return;
+        navButtons.find((button) => button.dataset.target === 'live')?.click();
+        if (filter !== 'recent') return;
+        const recentChip = $$('.filter-row .chip').find((chip) => chip.textContent.trim() === '剛完賽');
+        recentChip?.click();
+      })();
+
       $('[data-open-modal]').addEventListener('click', openModal);
       $('#saveFavorites').addEventListener('click', () => closeModal(true));
       $('#modal').addEventListener('click', (event) => {
