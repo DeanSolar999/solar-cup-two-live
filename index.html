@@ -414,8 +414,8 @@
       right: 0;
       bottom: 84px;
       padding: 8px 14px;
-      background: rgba(255,210,26,.82);
-      color: #111;
+      background: rgba(101,13,22,.88);
+      color: var(--cream);
       font-size: 12px;
       font-weight: 800;
       letter-spacing: .02em;
@@ -1595,13 +1595,24 @@
         return teamName(match?._t?.find((team) => teamName(team) !== name)) || '待分流確認';
       }
 
+      // 開幕中間態（顯示層唯一真相）：資格賽 150 場全完、但淘汰賽一場都還沒落分。
+      // 此時只能停在「開幕」，初賽燈不得亮、文字不得先喊「階級初賽」。
+      // 只看 done（全 310 場完賽總數）會誤判——done===150 可能是「資格賽剛打完」，
+      // 也可能是「資格賽 145＋淘汰賽 5」，兩者階段完全不同，必須看 koDone 才分得出來。
+      const isOpening = (done, koDone) => done >= 150 && done < 190 && !(koDone > 0);
+      // 淘汰賽實際完賽數（場次 >150）：戰情頁與晉級頁共用同一支，不得各算各的
+      const koDoneCount = () =>
+        Object.keys(results).filter((n) => Number(n) > QUAL_LAST).length;
+
       // 決勝段（≥250）統一掛「決勝」前綴：與戰情燈條的「決勝」格、
       // 晉級燈條的 8強/4強/決賽 三格同一套用語，不得互相打臉
-      function stageLabel(done) {
+      function stageLabel(done, koDone) {
         if (done >= 298) return '決勝・決賽';
         if (done >= 270) return '決勝・準決賽';
         if (done >= 250) return '決勝・八強賽';
         if (done >= 190) return '階級複賽';
+        // 文案壓在 5 字內：.stat b 是 24px、半格寬約 130px，超過 5 個全形字會斷成兩行把卡片撐歪
+        if (isOpening(done, koDone)) return '開幕式';
         if (done >= 150) return '階級初賽';
         if (done >= 60) return '休閒資格賽';
         if (done > 0) return '競技資格賽';
@@ -1612,6 +1623,9 @@
       // 不得另起爐灶——避免「目前階段」文字與燈條互相打臉。
       const phaseSeg = (done, liveFrom, doneFrom) =>
         done >= doneFrom ? 'done' : done >= liveFrom ? 'live' : '';
+      // 初賽格：開幕中間態一律不亮（否則會和「開幕」同時 live，兩顆燈自打臉）
+      const firstRoundSeg = (done, koDone) =>
+        isOpening(done, koDone) ? '' : phaseSeg(done, 150, 190);
       const stripHTML = (items) => items.map(([label, state]) =>
         `<div class="phase ${state}"><i></i><span>${label}</span></div>`).join('');
       const statusPhases = (done, koDone) => [
@@ -1619,14 +1633,14 @@
         ['休資', phaseSeg(done, 60, 150)],
         // 開幕中間態：資格賽 150 場全完、淘汰賽尚未落分 ＝ 開幕式進行中
         ['開幕', done >= 150 ? (koDone > 0 ? 'done' : 'live') : ''],
-        ['初賽', phaseSeg(done, 150, 190)],
+        ['初賽', firstRoundSeg(done, koDone)],
         ['複賽', phaseSeg(done, 190, 250)],
         ['決勝', phaseSeg(done, 250, 310)],
         ['頒獎', done >= 310 ? 'live' : '']
       ];
-      const advancePhases = (done) => [
+      const advancePhases = (done, koDone) => [
         ['資格賽', phaseSeg(done, 1, 150)],
-        ['初賽', phaseSeg(done, 150, 190)],
+        ['初賽', firstRoundSeg(done, koDone)],
         ['複賽', phaseSeg(done, 190, 250)],
         ['8強', phaseSeg(done, 250, 270)],
         ['4強', phaseSeg(done, 270, 298)],
@@ -1662,10 +1676,10 @@
         const hero = states[0];
 
         $('#operationTime').textContent = `OPERATION STATUS · ${nowClock().slice(0, 5)}`;
+        const koDone = koDoneCount();
         $('#progressCount').textContent = `${done}／${matches.length || 310} 場完成`;
-        $('#currentStage').textContent = stageLabel(done);
+        $('#currentStage').textContent = stageLabel(done, koDone);
         $('#delayValue').textContent = sheetConnected ? delayText() : '等待同步';
-        const koDone = Object.keys(results).filter((n) => Number(n) > QUAL_LAST).length;
         $('#statusStrip').innerHTML = stripHTML(statusPhases(done, koDone));
 
         if (!hero) {
@@ -2025,9 +2039,12 @@
       }
 
       // 資格賽戰況卡：單組 4 隊 勝場/總得失/失分率/組內排名/晉級（3_資格賽積分榜 唯讀直取）
-      const ratioText = (ratio) => {
-        if (ratio == null) return '—';
-        if (ratio >= 999) return '∞'; // 後端 GA=0 sentinel＝999
+      // 失分率算不出來時一律印「—」（與主站同字樣，不得一邊 ∞ 一邊破折號）：
+      //   ① 還沒打過 → 後端給空值
+      //   ② 打出 21：0（棄賽照規定填 0：21，勝方失分就是 0）→ 分母 0，後端落 999 sentinel
+      // 這裡只攔顯示，排序／判定仍吃原始 ratio，不得更動。
+      const ratioText = (ratio, ga) => {
+        if (ratio == null || !Number.isFinite(ratio) || ratio >= 999 || ga === 0) return '—';
         return (Math.round(ratio * 100) / 100).toFixed(2);
       };
       function renderQualCard() {
@@ -2059,7 +2076,7 @@
               <span class="qname">${teamEmbXS(team.name)}${esc(team.name)}</span>
               <span>${team.wins ?? 0}</span>
               <span>${team.gf ?? 0}／${team.ga ?? 0}</span>
-              <span>${played ? ratioText(team.ratio) : '—'}</span>
+              <span>${played ? ratioText(team.ratio, team.ga) : '—'}</span>
               <span class="qtier">${doneGroup && team.tier ? `<b style="color:${tierColor(team.tier)}">${esc(team.tier)}</b>` : '待定'}</span>
             </div>`).join('');
       }
@@ -2192,8 +2209,9 @@
 
         // ④ 階段路徑：依已完賽場次動態推進（同 stageLabel 門檻）
         const done = Object.keys(results).length;
-        $('#advanceStageNow').textContent = `目前：${stageLabel(done)}`;
-        $('#advanceStrip').innerHTML = stripHTML(advancePhases(done));
+        const koDone = koDoneCount();
+        $('#advanceStageNow').textContent = `目前：${stageLabel(done, koDone)}`;
+        $('#advanceStrip').innerHTML = stripHTML(advancePhases(done, koDone));
 
         // ⑤ 資格賽戰況（同輪重繪，控件不動）
         renderQualCard();
