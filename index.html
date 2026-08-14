@@ -412,9 +412,9 @@
       z-index: 30;
       left: 0;
       right: 0;
-      bottom: 106px;
+      bottom: 84px;
       padding: 8px 14px;
-      background: var(--yellow);
+      background: rgba(255,210,26,.82);
       color: #111;
       font-size: 12px;
       font-weight: 800;
@@ -422,7 +422,9 @@
       text-align: center;
       box-shadow: 0 -2px 12px rgba(0,0,0,.4);
       pointer-events: none;
+      animation: noticeGlow 2.6s ease-in-out infinite;
     }
+    @keyframes noticeGlow { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
     .rank-club strong { display: block; font-size: 13px; }
     .rank-club small { color: var(--muted); font-size: 9px; }
     .rank-points { text-align: right; font-weight: 1000; }
