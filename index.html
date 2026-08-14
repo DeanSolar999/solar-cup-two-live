@@ -407,6 +407,22 @@
       box-shadow: 0 -2px 12px rgba(0,0,0,.4);
       pointer-events: none;
     }
+    .sched-notice {
+      position: absolute;
+      z-index: 30;
+      left: 0;
+      right: 0;
+      bottom: 106px;
+      padding: 8px 14px;
+      background: var(--yellow);
+      color: #111;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-align: center;
+      box-shadow: 0 -2px 12px rgba(0,0,0,.4);
+      pointer-events: none;
+    }
     .rank-club strong { display: block; font-size: 13px; }
     .rank-club small { color: var(--muted); font-size: 9px; }
     .rank-points { text-align: right; font-weight: 1000; }
@@ -1087,6 +1103,7 @@
       </div>
 
       <div class="test-banner" id="testBanner" role="status" hidden>⚠ 測試資料 · 非正式成績（賽務演練中）</div>
+      <div class="sched-notice" id="schedNotice" role="status">⚠ 賽程時間有可能提早，請選手務必配合現場調度</div>
 
       <nav class="bottom-nav" aria-label="主要導覽">
         <button class="nav-btn active" type="button" data-target="status">
