@@ -777,6 +777,18 @@
       color: var(--cream);
     }
     .choices { display: grid; gap: 7px; margin: 11px 0 13px; }
+    /* 完成設定：懸浮在彈窗底部。名冊有 108 隊，按鈕放在清單末端等於要一路捲到底才按得到，
+       而且選完前幾隊就想收工的人根本看不到它。sticky 讓清單從按鈕後面捲過去。
+       bottom 用負值抵銷 .sheet 的底部 padding，讓這條列真的貼齊彈窗底緣；
+       左右負 margin 讓漸層底撐滿整個彈窗寬度，不會露出兩側縫隙。 */
+    .sheet-foot {
+      position: sticky;
+      bottom: calc(-18px - env(safe-area-inset-bottom));
+      z-index: 5;
+      margin: 0 -15px calc(-18px - env(safe-area-inset-bottom));
+      padding: 12px 15px calc(12px + env(safe-area-inset-bottom));
+      background: linear-gradient(to top, #11141a 70%, rgba(17,20,26,.94) 88%, rgba(17,20,26,0));
+    }
     .choice {
       min-height: 47px;
       padding: 0 12px;
@@ -1132,7 +1144,7 @@
           <p>選擇1～3隊，賽程接近時主動提醒。</p>
           <input class="search" id="teamSearch" type="search" placeholder="搜尋隊伍名稱或球團">
           <div class="choices" id="teamChoices"></div>
-          <button class="primary-btn" id="saveFavorites" type="button" data-close-modal>完成設定・0／3</button>
+          <div class="sheet-foot"><button class="primary-btn" id="saveFavorites" type="button" data-close-modal>完成設定・0／3</button></div>
         </div>
       </div>
     </section>
